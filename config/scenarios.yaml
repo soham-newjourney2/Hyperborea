@@ -7,6 +7,12 @@ presets:
     duration_h: 3
     description: Typical monsoon afternoon shower (45 mm total) — routine load on drains.
     source: "Assumed. IMD 'moderate' is 15.6–64.4 mm/day; packed into 3 h here."
+  - id: design
+    title: Design storm (network sizing basis)
+    rain_mm_h: 20
+    duration_h: 2
+    description: The storm the simulated drains are sized for (D-20, 40 mm in 2 h) — default for development checks.
+    source: "Assumed design intensity 20 mm/h (P06, D-20); Salt Lake design standard unknown."
   - id: heavy
     title: Heavy downpour
     rain_mm_h: 40

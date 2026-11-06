@@ -1,0 +1,41 @@
+# Development planning norms (planning §7). ALL VALUES ARE ASSUMPTIONS for a screening-level check — each has a source note.
+floor_height_m: 3.2                 # typical floor-to-floor height (assumed; same rule as OSM building:levels × 3.2 m)
+uses:
+  residential:
+    occupancy_m2_per_person: 18     # NBC 2016 Part 4 occupant load (residential) — screening value
+    water_lpcd: 135                 # CPHEEO Manual on Water Supply (1999): 135 lpcd for cities with sewerage
+    electrical_w_per_m2: 15         # assumed connected load density (residential)
+  commercial:
+    occupancy_m2_per_person: 10     # NBC 2016 Part 4 occupant load (business) — screening value
+    water_lpcd: 45                  # CPHEEO: 45 lpcd for offices (day-time population)
+    electrical_w_per_m2: 60         # assumed connected load density (IT/office with HVAC)
+electrical:
+  diversity_factor: 0.6             # assumed
+  power_factor: 0.9                 # assumed, kW → kVA
+  transformer_kva: [100, 160, 250, 400, 630, 1000, 1600, 2000, 2500]   # standard ratings (P10)
+  transformer_margin: 1.25          # new unit rating ≥ 1.25 × added peak
+runoff:
+  site_c_before: 0.40               # open / vacant ground (planning §7 "other")
+  site_c_after: 0.90                # roof (planning §7)
+upgrades:
+  detention_peak_reduction: 0.40    # minimum peak cut of an on-site detention / RWH tank (assumed) …
+  detention_no_net_increase: true   # … sized so the site's peak runoff does not exceed pre-development (common SuDS rule)
+  drain_upsize_steps: 1             # receiving drain → next standard pipe size
+checks:
+  drainage: {pass_max_ratio: 0.8, conditional_max_ratio: 1.0}
+  electrical: {pass_max_loading: 0.8, conditional_max_loading: 1.0}   # transformer loading after added kVA  # fail only if the proposal itself tips a drain over 1.0
+  flood: {conditional_from_m: 0.15, fail_from_m: 0.45}          # plinth 0.45 m (config/flood.yaml)
+  road_access: {max_distance_m: 50}
+  facilities: {pass_within_m: 3000, conditional_within_m: 5000}  # straight-line; P12 replaces with travel time
+  landuse_compatible:
+    residential: [residential, mixed, construction, grass]
+    commercial: [commercial, retail, industrial, construction, mixed]
+weights:                            # transparent screening index (0–1), NOT an approval
+  drainage: 0.25
+  flood_exposure: 0.25
+  road_access: 0.15
+  critical_facilities: 0.15
+  land_use: 0.10
+  electrical: 0.05
+  water_supply: 0.05
+key_dimensions: [drainage, flood_exposure, road_access, critical_facilities, electrical]  # electrical key since P10

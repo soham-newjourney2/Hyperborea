@@ -18,7 +18,7 @@ import rasterio
 import shapely
 from shapely.geometry import LineString, MultiPoint, Point
 
-from backend.engine.hydraulics import MANNING_N, MIN_SLOPE, manning_full_circular
+from backend.engine.hydraulics import MANNING_N, MIN_SLOPE, PIPE_SIZES_M, manning_full_circular
 from pipelines.osm_common import ROOT
 
 UTM = 32645
@@ -37,7 +37,6 @@ FALLBACK_WATER = {"water", "wetland"}  # ponds/wetlands: receiving water only fo
 DIAMETER_M = {"trunk": 1.2, "primary": 1.2, "secondary": 1.2, "tertiary": 0.9}  # minimum by road class, else 0.6
 # D-20: size each drain for a design storm on everything upstream (rational method), standard pipe sizes.
 DESIGN_RAIN_MM_H = 20.0   # assumed design intensity (Salt Lake design standard unknown; KMC legacy ~6 mm/h)
-PIPE_SIZES_M = [0.6, 0.75, 0.9, 1.05, 1.2, 1.35, 1.5, 1.8, 2.1, 2.4]
 ROAD_HALF_WIDTH_M = {"trunk": 7.0, "primary": 7.0, "secondary": 5.5, "tertiary": 4.0}  # else 3.0
 RUNOFF_C = {"roof": 0.90, "road": 0.85, "other": 0.40}
 
