@@ -52,6 +52,11 @@ function stats(a: Asset): Stat[] {
               ['Ground', num(t.ground_elev_m, 1) && `${num(t.ground_elev_m, 1)} m`],
               ['To outfall', num(t.dist_to_outfall_m) && `${num(t.dist_to_outfall_m)} m`],
             ]
+        : a.layer === 'water_quality'
+          ? ((t.parameters as { parameter: string; value: number; unit: string }[] | undefined) ?? [])
+              .map((p): [string, string | null] => [p.parameter === 'ph' ? 'pH' : p.parameter.toUpperCase(),
+                `${p.value}${p.unit === 'pH units' ? '' : ` ${p.unit}`}`])
+              .concat([['Sampled', txt(t.sample_date)]])
         : a.layer === 'transformers'
           ? [
               ['Rating', num(t.rating_kva) && `${num(t.rating_kva)} kVA`],

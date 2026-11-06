@@ -19,7 +19,9 @@ import {
   PolylineArrowMaterialProperty,
   PolylineDashMaterialProperty,
   PolylineGraphics,
+  Rectangle,
   SceneTransforms,
+  SingleTileImageryProvider,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   ShadowMode,
@@ -30,7 +32,7 @@ import {
   type MaterialProperty,
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
-import { getAsset, getLayer, type Asset, type FloodResult, type Region } from '../lib/api'
+import { getAsset, getLandcover, getLayer, type Asset, type FloodResult, type Region } from '../lib/api'
 import { statusStyle } from '../lib/provenance'
 import { DRAINAGE_LAYERS, FACILITY, FEEDER_COLOR, POWER_LAYERS, SCENARIO, SCENARIO_POWER, buildingColor, capacityColor, drainWidth,
   loadingColor, pondingColor, roadStyle, runoffColor } from '../lib/styles'
@@ -43,7 +45,7 @@ const css = (c: string, a = 1) => Color.fromCssColorString(c).withAlpha(a)
 const HIGHLIGHT = css('#facc15')
 // Facilities include the 2 km buffer (hospitals outside the pilot matter); everything else pilot-only.
 const FULL_EXTENT = new Set(['facilities', 'boundary', 'drains', 'drain_nodes', 'outfalls', 'catchments', 'sites',
-  'substations', 'transformers', 'feeders'])
+  'substations', 'transformers', 'feeders', 'water_quality'])
 const DRAIN_LIFT_M = 1.5 // above road polylines (avoid z-fighting)
 const EOX_URL = 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg'
 
@@ -209,6 +211,9 @@ function styleLayer(id: string, ds: GeoJsonDataSource) {
           e.polygon.outlineColor = new ConstantProperty(css('#0f172a', 0.6))
           e.polygon.height = new ConstantProperty(0.2)
         }
+        break
+      case 'water_quality':
+        asPoint(e, '#38bdf8', 20, 'W')
         break
       case 'transformers':
         asPoint(e, loadingColor(Number(attrs.loading_pct) || 0), attrs.kind === 'distribution' ? 16 : 20, 'T')
@@ -402,7 +407,8 @@ export default function MapView() {
   const tagRef = useRef<HTMLDivElement>(null)
   const anchorRef = useRef<Cartesian3 | null>(null)
   const { region, visible, imagery, view, quality, selectedId, selected, neighbourhood, flyTarget, flood, dev, drawing,
-    drawPoints, drawn, select, setSelected, setLoading } = useApp()
+    drawPoints, drawn, overlays, select, setSelected, setLoading } = useApp()
+  const overlayLayers = useRef(new Map<string, ImageryLayer>())
   const refreshLooks = () => {
     const st = useApp.getState()
     applyScenario(entityIndex.current, looks.current, st.flood)
@@ -636,6 +642,36 @@ export default function MapView() {
     }
     viewer.scene.requestRender()
   }, [drawing, drawPoints, drawn, dev])
+
+  // P11 raster overlays (WorldCover / NDVI) as single-tile imagery with the bounds from landcover stats.
+  useEffect(() => {
+    const viewer = viewerRef.current
+    if (!viewer) return
+    const run = { cancelled: false }
+    for (const k of ['worldcover', 'ndvi'] as const) {
+      const lyr = overlayLayers.current.get(k)
+      if (lyr) lyr.show = overlays[k]
+      if (!overlays[k] || lyr) continue
+      getLandcover()
+        .then(async (s) => {
+          const o = s.overlays[k]
+          const provider = await SingleTileImageryProvider.fromUrl(`${import.meta.env.BASE_URL ?? '/'}${o.url}`, {
+            rectangle: Rectangle.fromDegrees(...o.bounds),
+            credit: new Credit(k === 'worldcover' ? '© ESA WorldCover 2021' : 'Contains modified Copernicus Sentinel data'),
+          })
+          if (run.cancelled || viewer.isDestroyed() || overlayLayers.current.has(k)) return
+          const layer = viewer.imageryLayers.addImageryProvider(provider)
+          overlayLayers.current.set(k, layer)
+          layer.show = useApp.getState().overlays[k]
+          viewer.scene.requestRender()
+        })
+        .catch((e) => console.error(`overlay ${k} failed`, e))
+    }
+    viewer.scene.requestRender()
+    return () => {
+      run.cancelled = true
+    }
+  }, [overlays])
 
   // Explorer "fly to" requests.
   useEffect(() => {

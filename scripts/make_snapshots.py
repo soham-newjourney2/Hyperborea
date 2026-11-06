@@ -33,7 +33,8 @@ def main(base: str = "http://127.0.0.1:8000/api") -> None:
         r = c.get(f"/layers/{lid}", params={"in_pilot": "true"} if pilot else None).raise_for_status()
         files[f"layer_{lid}{'_pilot' if pilot else ''}.json"] = r.content
 
-    for path in ("weather/current", "weather/forecast", "climate/summary", "scenarios/presets"):
+    for path in ("weather/current", "weather/forecast", "climate/summary", "scenarios/presets",
+                 "environment/air", "environment/water", "environment/landcover"):
         files[path.replace("/", "_") + ".json"] = c.get(f"/{path}").raise_for_status().content
     # P08 fixed demo results (UI fallback + expected-output test).
     for preset in ("heavy", "extreme"):
@@ -49,10 +50,11 @@ def main(base: str = "http://127.0.0.1:8000/api") -> None:
     files["dev_compare.json"] = body
     (ROOT / "data" / "snapshots" / "dev_compare.json").write_bytes(body)
     # Backend's own weather fallback (cache format) → data/snapshots/weather.json
-    cache = ROOT / "local" / "cache" / "weather.json"
-    if cache.exists():
-        (ROOT / "data" / "snapshots").mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(cache, ROOT / "data" / "snapshots" / "weather.json")
+    for name in ("weather.json", "air.json"):  # backend fallbacks (cache format)
+        cache = ROOT / "local" / "cache" / name
+        if cache.exists():
+            (ROOT / "data" / "snapshots").mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(cache, ROOT / "data" / "snapshots" / name)
 
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     files["health.json"] = json.dumps({**health, "status": "snapshot", "snapshot_at": stamp}).encode()

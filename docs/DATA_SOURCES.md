@@ -120,3 +120,34 @@ Template:
 - Processing: building load = BUA × W/m² (15 residential / 60 commercial by tag → OSM landuse → footprint rule) × diversity 0.6 / pf 0.9 (59.3 MVA total); k-means + bisection groups ≤ 504 kVA peak; rating = smallest standard ≥ 1.25 × peak; transformer on nearest road; facilities → nearest transformer
 - Quality / limitations: no real feeder routes, ratings, loading or backup power; feeders are straight schematic lines
 - Attribution text shown in UI: "SIMULATED NETWORK — not the actual utility grid"
+
+### om_aq — Open-Meteo Air Quality API (CAMS)
+- Provider / access: air-quality-api.open-meteo.com `/v1/air-quality` (no key), `backend/app/services/air.py`   - Licence / terms: CC BY 4.0; CAMS © ECMWF/Copernicus   - Verified: yes (open-meteo.com licence page, 2026-11-06)
+- Accessed: live, cached 60 min (`local/cache/air.json`); fallback `data/snapshots/air.json`   - Coverage: model grid point near the pilot centroid (22.60 N, 88.40 E), hourly PM2.5 / PM10 / NO₂ / O₃, past 24 h + 72 h forecast   - CRS / units: WGS84; µg/m³
+- data_status: modelled (CAMS global/regional model, ~10–40 km)   - Used by: P11 Environment panel
+- Processing: 24-h means (O₃ max 8-h mean) → CPCB NAQI sub-indices (`config/naqi.yaml`) → category = max sub-index
+- Quality / limitations: model, not CPCB station measurements; one value for the whole pilot
+- Attribution text shown in UI: "Air quality: CAMS via Open-Meteo.com"
+
+### naqi — India National Air Quality Index breakpoints (CPCB 2014)
+- Provider / access: CPCB NAQI (CUPS/82/2014-15), transcribed in `config/naqi.yaml`   - Licence: public standard, cite CPCB   - Verified: no — Teammate C to confirm breakpoints
+- data_status: curated   - Used by: P11 NAQI categories + colours
+
+### esa_wc — ESA WorldCover 10 m v200 (2021)
+- Provider / access: Microsoft Planetary Computer STAC `esa-worldcover` (asset `map`), `pipelines/landcover.py`   - Licence / terms: CC BY 4.0 — "© ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium"   - Verified: no — confirm on the PC dataset page (Teammate C)
+- Accessed: 2026-11-06   - Coverage: pilot + 300 m, 10 m pixels   - CRS / units: EPSG:4326; class codes 10–100
+- data_status: observed (classified from satellite imagery)   - Used by: P11 land-cover shares (pilot + per catchment), overlay PNG
+- Quality / limitations: 2021 snapshot; ~75 % global accuracy; built-up dominates at 10 m in dense blocks
+- Attribution text shown in UI: "© ESA WorldCover 2021 (CC BY 4.0)"
+
+### s2_l2a — Sentinel-2 Level-2A surface reflectance
+- Provider / access: Planetary Computer STAC `sentinel-2-l2a` (B04, B08, SCL), `pipelines/landcover.py`   - Licence / terms: Copernicus open data — "Contains modified Copernicus Sentinel data 2025–2026"   - Verified: yes (Copernicus data policy)
+- Accessed: 2026-11-06   - Coverage: dry season 2025-12-01 → 2026-03-31, scenes with < 10 % cloud, pilot + 300 m   - CRS / units: native UTM 45N, resampled to the WorldCover grid; reflectance (BOA offset −1000 applied for baseline ≥ 04.00)
+- data_status: observed (derived NDVI = (B08 − B04)/(B08 + B04), per-pixel median over scenes, SCL clouds/shadows masked)   - Used by: P11 NDVI overlay + per-catchment mean (P13 CV later)
+- Attribution text shown in UI: "Contains modified Copernicus Sentinel data 2025–2026"
+
+### syn_water — DEMO water-quality points
+- Provider / access: ours, `pipelines/make_water_demo.py` (seed 7) → `data/synthetic/water_quality.geojson`   - Licence: ours
+- Coverage: 8 points on OSM canals / water bodies (pH, turbidity NTU, TDS mg/L, sample dates Oct 2026)
+- data_status: **simulated — DEMO DATA, not measurements** (no published values found, O-04)   - Used by: P11 water layer (points only, never interpolated)
+- Attribution text shown in UI: "DEMO DATA — simulated water-quality values"

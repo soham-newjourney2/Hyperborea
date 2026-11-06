@@ -1,9 +1,31 @@
+import { useEffect, useState } from 'react'
+import { getLandcover, type Landcover } from '../lib/api'
 import { HEIGHT_STATUS } from '../lib/provenance'
 import { UNITS } from '../lib/styles'
 import { useApp } from '../store'
 import ProvenanceBadge, { Chip } from './ProvenanceBadge'
 
-const HIDDEN_ATTRS = new Set(['height_status', 'u', 'v', 'key', 'formula', 'buildings', 'facilities', 'transformers'])
+const HIDDEN_ATTRS = new Set(['height_status', 'u', 'v', 'key', 'formula', 'buildings', 'facilities', 'transformers', 'parameters'])
+
+function CatchmentCover({ id }: { id: string }) {
+  const [s, setS] = useState<Landcover | null>(null)
+  useEffect(() => {
+    getLandcover().then(setS).catch(() => {})
+  }, [])
+  const c = s?.per_catchment[id]
+  if (!c) return null
+  return (
+    <section className="rounded border border-slate-800 bg-slate-900/60 p-2 text-xs">
+      <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Land cover (ESA WorldCover 2021, observed)</h4>
+      <div className="grid grid-cols-4 gap-1 tabular-nums">
+        <div><div className="text-[9px] text-slate-500">BUILT-UP</div>{c.built_up_pct}%</div>
+        <div><div className="text-[9px] text-slate-500">GREEN</div>{c.green_pct}%</div>
+        <div><div className="text-[9px] text-slate-500">WATER</div>{c.water_pct}%</div>
+        <div><div className="text-[9px] text-slate-500">NDVI</div>{c.ndvi_mean ?? '—'}</div>
+      </div>
+    </section>
+  )
+}
 
 function CapacityBlock({ t }: { t: Record<string, unknown> }) {
   const n = Number(t.manning_n)
@@ -75,6 +97,7 @@ export default function AssetInspector() {
       )}
 
       {a.layer === 'drains' && <CapacityBlock t={a.attrs} />}
+      {a.layer === 'catchments' && <CatchmentCover id={a.asset_id} />}
 
       <button
         onClick={() => useApp.getState().setRightTab('relations')}

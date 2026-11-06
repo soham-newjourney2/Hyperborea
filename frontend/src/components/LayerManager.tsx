@@ -3,6 +3,7 @@ import ProvenanceBadge from './ProvenanceBadge'
 
 const EXTENT_NOTE: Record<string, string> = {
   facilities: 'pilot + 2 km buffer',
+  water_quality: 'pilot + surrounding canals',
 }
 
 export default function LayerManager() {

@@ -21,6 +21,7 @@ LAYER_META: dict[str, tuple[str, str, bool]] = {
     "roads": ("Roads", "Mobility", True),
     "facilities": ("Critical facilities", "Critical facilities", True),
     "waterways": ("Waterways & water bodies", "Water", False),
+    "water_quality": ("Water quality points", "Water", False),
     "drains": ("Drains (simulated)", "Drainage", False),
     "outfalls": ("Outfalls", "Drainage", False),
     "catchments": ("Catchments (simulated)", "Drainage", False),
@@ -76,9 +77,14 @@ class LayerStore:
             return store
         files = [path] + sorted(p for p in path.parent.glob("*.gpkg") if p != path)
         found = [(n, f) for f in files for n, _ in pyogrio.list_layers(f)]
-        sites = path.parents[1] / "curated" / "sites.geojson"  # P09 curated candidate sites
-        if sites.exists():
-            found.append(("sites", sites))
+        data = path.parents[1]
+        extra = [("sites", [data / "curated" / "sites.geojson"]),  # P09 curated candidate sites
+                 # P11: curated measurements win over the demo file when they exist
+                 ("water_quality", [data / "curated" / "water_quality.geojson", data / "synthetic" / "water_quality.geojson"])]
+        for name, candidates in extra:
+            src = next((c for c in candidates if c.exists()), None)
+            if src:
+                found.append((name, src))
         order = {n: i for i, n in enumerate(LAYER_META)}
         for name, f in sorted(found, key=lambda nf: order.get(nf[0], 99)):
             if name in store.layers:

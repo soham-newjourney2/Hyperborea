@@ -38,6 +38,7 @@ interface AppState {
   drawing: boolean
   drawPoints: LonLat[]
   drawn: LonLat[] | null
+  overlays: { worldcover: boolean; ndvi: boolean }
   setRegion: (r: Region) => void
   setLayers: (l: LayerMeta[]) => void
   toggle: (id: string) => void
@@ -57,6 +58,7 @@ interface AppState {
   addDrawPoint: (p: LonLat) => void
   finishDraw: () => void
   cancelDraw: () => void
+  setOverlay: (k: 'worldcover' | 'ndvi', on: boolean) => void
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -78,6 +80,10 @@ export const useApp = create<AppState>((set) => ({
   drawing: false,
   drawPoints: [],
   drawn: null,
+  overlays: (() => {
+    const o = new URLSearchParams(window.location.search).get('overlay') // ?overlay=ndvi|worldcover
+    return { worldcover: o === 'worldcover', ndvi: o === 'ndvi' }
+  })(),
   setRegion: (region) => set({ region }),
   setLayers: (layers) =>
     set((s) => ({
@@ -118,6 +124,8 @@ export const useApp = create<AppState>((set) => ({
       return pts.length >= 3 ? { drawing: false, drawn: pts, drawPoints: [] } : { drawing: false, drawPoints: [] }
     }),
   cancelDraw: () => set({ drawing: false, drawPoints: [] }),
+  // one overlay at a time (both are opaque-ish rasters over the same area)
+  setOverlay: (k, on) => set(() => ({ overlays: { worldcover: false, ndvi: false, [k]: on } })),
   setFlood: (flood) =>
     set((s) => ({
       flood,

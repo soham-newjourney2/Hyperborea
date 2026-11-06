@@ -18,6 +18,7 @@ describe('snapshotName', () => {
     expect(snapshotName('weather/forecast')).toBe('weather_forecast.json')
     expect(snapshotName('climate/summary')).toBe('climate_summary.json')
     expect(snapshotName('scenarios/presets')).toBe('scenarios_presets.json')
+    expect(snapshotName('environment/landcover')).toBe('environment_landcover.json')
   })
   it('returns null for endpoints without snapshots', () => {
     expect(snapshotName('assets/bld_osm_w1')).toBeNull()

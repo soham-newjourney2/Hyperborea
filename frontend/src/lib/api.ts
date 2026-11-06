@@ -10,7 +10,8 @@ export function apiUrl(path: string, base: string = API_URL): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
 }
 
-const SNAPSHOT_PATHS = new Set(['weather/current', 'weather/forecast', 'climate/summary', 'scenarios/presets'])
+const SNAPSHOT_PATHS = new Set(['weather/current', 'weather/forecast', 'climate/summary', 'scenarios/presets',
+  'environment/air', 'environment/water', 'environment/landcover'])
 
 /** API path → snapshot file name (must match scripts/make_snapshots.py); null = not snapshotted. */
 export function snapshotName(path: string): string | null {
@@ -505,4 +506,48 @@ export async function compareDevelopment(options: DevRequest[], signal?: AbortSi
     if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) throw err
     return { ...((await r.json()) as DevCompare), offline: true }
   }
+}
+
+// ---- P11 environment ---------------------------------------------------------------------------------
+export interface AirQuality {
+  source_id: string
+  data_status: string
+  attribution: string
+  fetched_at: string
+  stale: boolean
+  origin: string
+  stale_reason: string | null
+  window: { from: string; to: string; hours: number }
+  means_ugm3: Record<string, number | null>
+  sub_index: Record<string, number | null>
+  naqi: number | null
+  dominant: string | null
+  category: string | null
+  color: string | null
+  note: string
+  hourly: { time: string; pm2_5: number; pm10: number; nitrogen_dioxide: number; ozone: number }[]
+}
+export interface WaterResponse {
+  data_status: string[]
+  demo: boolean
+  banner: string
+  note: string
+  points: GeoJSON
+}
+export interface Landcover {
+  worldcover: { source_id: string; data_status: string; year: number; classes: Record<string, { label: string; color: string }>; pilot_shares_pct: Record<string, number> }
+  ndvi: { source_id: string; data_status: string; window: string; scenes: { id: string; date: string; cloud_pct: number }[]; pilot_mean: number; note: string }
+  per_catchment: Record<string, { built_up_pct: number; green_pct: number; water_pct: number; ndvi_mean?: number }>
+  overlays: Record<'worldcover' | 'ndvi', { url: string; bounds: [number, number, number, number] }>
+}
+export const getAir = (signal?: AbortSignal) => getJson<AirQuality>('environment/air', signal)
+export const getWater = (signal?: AbortSignal) => getJson<WaterResponse>('environment/water', signal)
+let landcoverPromise: Promise<Landcover> | null = null
+/** Cached once per session (overlay bounds + per-catchment shares are static). */
+export function getLandcover(signal?: AbortSignal): Promise<Landcover> {
+  landcoverPromise ??= getJson<Landcover>('environment/landcover', signal).catch((e) => {
+    landcoverPromise = null
+    throw e
+  })
+  return landcoverPromise
 }

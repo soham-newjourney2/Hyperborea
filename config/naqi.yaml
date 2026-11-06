@@ -1,0 +1,15 @@
+# India National Air Quality Index (NAQI), CPCB 2014 — concentration breakpoints (µg/m³) → sub-index bands.
+# Source: CPCB "National Air Quality Index" (Control of Urban Pollution Series CUPS/82/2014-15). Verify: Teammate C.
+# PM2.5 / PM10 / NO2 are 24-h averages; O3 is an 8-h average (we use the max 8-h running mean of the last 24 h).
+categories:            # sub-index range, official CPCB colour
+  - {name: Good,         aqi: [0, 50],    color: "#00B050"}
+  - {name: Satisfactory, aqi: [51, 100],  color: "#92D050"}
+  - {name: Moderate,     aqi: [101, 200], color: "#FFFF00"}
+  - {name: Poor,         aqi: [201, 300], color: "#FF9900"}
+  - {name: Very Poor,    aqi: [301, 400], color: "#FF0000"}
+  - {name: Severe,       aqi: [401, 500], color: "#C00000"}
+breakpoints:           # upper bound of each category (same order); last open-ended
+  pm2_5:            [30, 60, 90, 120, 250, 500]
+  pm10:             [50, 100, 250, 350, 430, 600]
+  nitrogen_dioxide: [40, 80, 180, 280, 400, 800]
+  ozone:            [50, 100, 168, 208, 748, 1000]

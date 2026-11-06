@@ -7,7 +7,7 @@ import { getHealth, getLayers, getRegion, getWeatherForecast, runFlood, type Hea
 import { useApp } from './store'
 
 // Charts (Recharts) load only when the Weather tab opens — keeps first paint light.
-const WeatherPanel = lazy(() => import('./components/WeatherPanel'))
+const EnvironmentPanel = lazy(() => import('./components/EnvironmentPanel'))
 const RelationshipExplorer = lazy(() => import('./components/RelationshipExplorer'))
 const DisasterLab = lazy(() => import('./components/DisasterLab'))
 const DevelopmentPanel = lazy(() => import('./components/DevelopmentPanel'))
@@ -138,7 +138,7 @@ function Tabs() {
       {tab('relations', 'Relations')}
       {tab('disaster', 'Disaster')}
       {tab('develop', 'Develop')}
-      {tab('weather', 'Weather')}
+      {tab('weather', 'Environment')}
     </div>
   )
 }
@@ -197,7 +197,7 @@ export default function App() {
               <AssetInspector />
             ) : (
               <Suspense fallback={<p className="text-xs text-slate-500">Loading…</p>}>
-                {rightTab === 'relations' ? <RelationshipExplorer /> : rightTab === 'disaster' ? <DisasterLab /> : rightTab === 'develop' ? <DevelopmentPanel /> : <WeatherPanel />}
+                {rightTab === 'relations' ? <RelationshipExplorer /> : rightTab === 'disaster' ? <DisasterLab /> : rightTab === 'develop' ? <DevelopmentPanel /> : <EnvironmentPanel />}
               </Suspense>
             )}
           </div>
@@ -214,7 +214,8 @@ export default function App() {
         )}
         <WeatherChip />
         <span className="ml-auto">
-          © OpenStreetMap contributors (ODbL) · Sentinel-2 cloudless by EOX · Weather data by Open-Meteo.com
+          © OpenStreetMap contributors (ODbL) · Sentinel-2 cloudless by EOX · Weather & CAMS air quality via Open-Meteo.com ·
+          © ESA WorldCover 2021 · Contains modified Copernicus Sentinel data
         </span>
       </footer>
     </div>
