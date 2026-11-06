@@ -1,0 +1,19 @@
+# Flood engine thresholds + assumptions (planning §7). Single source: engine/rules.py loads this; the UI shows it.
+ponding:
+  low_lying_fraction: 0.3      # share of a catchment where overflow pools (assumed)
+  max_depth_m: 1.0             # cap (assumed)
+roads:
+  impaired_m: 0.15             # cars slow / two-wheelers at risk (assumed)
+  impassable_m: 0.30           # most cars cannot pass (assumed)
+buildings:
+  plinth_m: 0.45               # typical plinth height (assumed)
+transformers:
+  plinth_m: 0.60               # protective shutdown above this (P10)
+drains:
+  near_capacity_ratio: 0.8     # load ratio shown as "near capacity"
+assumptions:
+  - "Uniform rain over the pilot for the whole duration (no spatial/temporal pattern)."
+  - "Rational method peak runoff; no time of concentration or storage routing."
+  - "Each drain's overflow pools in its own catchment's low-lying 30 %."
+  - "Simulated drain network (sizes, condition) — not municipal records."
+  - "Outfalls discharge freely (no canal backwater, no pumping)."

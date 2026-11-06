@@ -1,0 +1,22 @@
+# Risk INDEX (not a probability): R = H^wH · E^wE · V^wV · C^wC on 0–1 components (planning §7, VISION §8.4).
+weights: {hazard: 0.35, exposure: 0.25, vulnerability: 0.15, consequence: 0.25}
+floor: 0.05                    # components are floored so one unknown does not zero the index
+vulnerability:                 # assumed
+  building_low_rise: 0.8       # ≤ 2 levels (no vertical refuge)
+  building_mid_rise: 0.5
+  road_local: 0.8
+  road_arterial: 0.5
+  facility: 0.7
+consequence:                   # criticality, assumed
+  hospital: 1.0
+  clinic: 0.8
+  fire_station: 1.0
+  police: 0.9
+  metro_station: 0.8
+  rail_station: 0.7
+  school: 0.6
+  college: 0.5
+  university: 0.5
+  road_arterial: 1.0
+  road_secondary: 0.7
+  road_local: 0.4
