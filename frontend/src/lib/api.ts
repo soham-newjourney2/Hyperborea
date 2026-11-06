@@ -1,0 +1,430 @@
+// API client. Base URL from VITE_API_URL (planning §8).
+// Offline fallback (P04): any request that fails or takes > 5 s is served from public/snapshots/*.json
+// (made by scripts/make_snapshots.py) and the app shows an "Offline snapshot" badge.
+export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000/api'
+const SNAPSHOT_BASE = `${import.meta.env.BASE_URL ?? '/'}snapshots/`
+const TIMEOUT_MS = 5000
+const LAYER_TIMEOUT_MS = 20000 // big GeoJSON from a cold-started Space can legitimately take > 5 s
+
+export function apiUrl(path: string, base: string = API_URL): string {
+  return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
+}
+
+const SNAPSHOT_PATHS = new Set(['weather/current', 'weather/forecast', 'climate/summary', 'scenarios/presets'])
+
+/** API path → snapshot file name (must match scripts/make_snapshots.py); null = not snapshotted. */
+export function snapshotName(path: string): string | null {
+  const [p, q = ''] = path.replace(/^\/+/, '').split('?')
+  if (p === 'health' || p === 'region' || p === 'layers') return `${p}.json`
+  if (SNAPSHOT_PATHS.has(p)) return `${p.replace('/', '_')}.json`
+  const m = /^layers\/([^/]+)$/.exec(p)
+  if (m) return `layer_${decodeURIComponent(m[1])}${/(^|&)in_pilot=true(&|$)/.test(q) ? '_pilot' : ''}.json`
+  return null
+}
+
+export interface Health {
+  status: string // "ok" live, "snapshot" when served from the offline fallback
+  version: string
+  data_timestamp: string | null
+  snapshot_at?: string
+}
+
+async function fetchWithTimeout(url: string, signal: AbortSignal | undefined, ms: number): Promise<Response> {
+  return fetchWithTimeoutInit(url, {}, signal, ms)
+}
+
+async function fetchWithTimeoutInit(url: string, init: RequestInit, signal: AbortSignal | undefined, ms: number): Promise<Response> {
+  const ctrl = new AbortController()
+  const onAbort = () => ctrl.abort()
+  signal?.addEventListener('abort', onAbort)
+  const timer = setTimeout(() => ctrl.abort(), ms)
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal })
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', onAbort)
+  }
+}
+
+async function getJson<T>(path: string, signal?: AbortSignal, timeoutMs = TIMEOUT_MS): Promise<T> {
+  try {
+    const r = await fetchWithTimeout(apiUrl(path), signal, timeoutMs)
+    if (!r.ok) throw new Error(`${path} ${r.status}`)
+    return (await r.json()) as T
+  } catch (err) {
+    if (signal?.aborted) throw err // caller cancelled — not an outage
+    const name = snapshotName(path)
+    if (!name) throw err
+    const r = await fetch(SNAPSHOT_BASE + name, { signal })
+    // Missing snapshot: dev servers / SPA hosts answer with index.html — treat as "no snapshot".
+    if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) throw err
+    return (await r.json()) as T
+  }
+}
+
+export const getHealth = (signal?: AbortSignal) => getJson<Health>('health', signal)
+
+export interface Region {
+  asset_id: string
+  name: string
+  data_status: string
+  source_id: string
+  attrs: Record<string, unknown>
+  centroid: [number, number]
+  bbox: [number, number, number, number]
+  boundary: GeoJSON
+}
+
+export interface LayerMeta {
+  id: string
+  title: string
+  group: string
+  default_visible: boolean
+  geometry_type: string[]
+  count: number
+  count_in_pilot: number
+  data_status: Record<string, number>
+  source_ids: string[]
+}
+
+export interface FeatureProps {
+  asset_id: string
+  asset_type: string
+  name?: string | null
+  data_status: string
+  source_id: string
+  observed_at?: string | null
+  ingested_at: string
+  confidence?: string | number | null
+  assumptions?: string
+  attrs: Record<string, unknown>
+  in_pilot: boolean
+}
+
+export interface GeoJSON {
+  type: 'FeatureCollection'
+  features: { type: 'Feature'; geometry: unknown; properties: FeatureProps }[]
+}
+
+export interface Relationship {
+  relationship_id: string
+  type: string
+  rule: string
+  weight: number | null
+  unit: string
+  data_status: string
+  confidence: string
+  assumptions: string
+  direction: 'out' | 'in'
+  label: string
+  other_id: string
+  other_kind: string
+  other_type: string
+  other_name: string | null
+}
+
+export interface Asset extends FeatureProps {
+  layer: string
+  position: [number, number]
+  relationships: Relationship[]
+}
+
+export const getRegion = (signal?: AbortSignal) => getJson<Region>('region', signal)
+export const getLayers = (signal?: AbortSignal) => getJson<LayerMeta[]>('layers', signal)
+// Layers seen this session — lets asset detail work offline (built from the feature's own props).
+const layerCache = new Map<string, GeoJSON>()
+
+export async function getLayer(id: string, inPilot: boolean, signal?: AbortSignal): Promise<GeoJSON> {
+  const gj = await getJson<GeoJSON>(`layers/${encodeURIComponent(id)}${inPilot ? '?in_pilot=true' : ''}`, signal, LAYER_TIMEOUT_MS)
+  layerCache.set(id, gj)
+  return gj
+}
+
+function roughCenter(geometry: unknown): [number, number] {
+  let sx = 0
+  let sy = 0
+  let n = 0
+  const walk = (c: unknown): void => {
+    if (Array.isArray(c) && typeof c[0] === 'number') {
+      sx += c[0] as number
+      sy += c[1] as number
+      n++
+    } else if (Array.isArray(c)) c.forEach(walk)
+  }
+  walk((geometry as { coordinates?: unknown })?.coordinates)
+  return n ? [sx / n, sy / n] : [0, 0]
+}
+
+export function assetFromCache(id: string): Asset | null {
+  for (const [layer, gj] of layerCache) {
+    const f = gj.features.find((x) => x.properties.asset_id === id)
+    if (f) return { ...f.properties, layer, position: roughCenter(f.geometry), relationships: [] }
+  }
+  return null
+}
+
+export async function getAsset(id: string, signal?: AbortSignal): Promise<Asset> {
+  try {
+    return await getJson<Asset>(`assets/${encodeURIComponent(id)}`, signal)
+  } catch (err) {
+    const cached = signal?.aborted ? null : assetFromCache(id)
+    if (cached) return cached
+    throw err
+  }
+}
+
+// ---- P05 weather + climate -------------------------------------------------------------------
+export interface Weather {
+  source_id: string
+  data_status: string
+  attribution: string
+  fetched_at: string
+  stale: boolean
+  origin: 'live' | 'cache' | 'snapshot'
+  stale_reason: string | null
+  location: { lat: number; lon: number; elevation_m: number | null; timezone: string }
+  units: Record<string, string>
+  current: {
+    time: string
+    temperature_2m: number
+    relative_humidity_2m: number
+    precipitation: number
+    rain: number
+    wind_speed_10m: number
+    weather_code: number
+    condition: string
+  }
+  hourly?: {
+    time: string
+    precipitation: number
+    rain?: number
+    temperature_2m?: number
+    precipitation_probability?: number | null
+  }[]
+}
+
+export interface ClimateYear {
+  year: number
+  total_mm: number
+  jjas_mm: number
+  max_1day_mm: number
+  heavy_days: number
+  very_heavy_days: number
+  extremely_heavy_days: number
+}
+
+export interface Trend {
+  slope_per_decade: number
+  p_value: number
+  unit: string
+  significant_5pct: boolean
+}
+
+export interface ClimateSummary {
+  source_id: string
+  data_status: string
+  label: string
+  grid: { lat: number; lon: number; resolution: string }
+  period: { start: string; end: string; full_years: [number, number]; n_years: number }
+  thresholds_mm_day: { heavy: number; very_heavy: number; extremely_heavy: number }
+  stats: {
+    annual_total_mean_mm: number
+    jjas_share_pct: number
+    max_1day: { mm: number; date: string }
+    annual_max_1day_median_mm: number
+    heavy_days_per_year_mean: number
+  }
+  trends: Record<'annual_total' | 'annual_max_1day' | 'heavy_days', Trend>
+  notes: string[]
+  years: ClimateYear[]
+}
+
+export interface Preset {
+  id: string
+  title: string
+  rain_mm_h: number
+  duration_h: number
+  total_mm: number
+  description: string
+  source: string
+  data_status: string
+  source_id: string
+}
+
+export const getWeatherForecast = (signal?: AbortSignal) => getJson<Weather>('weather/forecast', signal)
+export const getClimateSummary = (signal?: AbortSignal) => getJson<ClimateSummary>('climate/summary', signal)
+export const getPresets = (signal?: AbortSignal) => getJson<Preset[]>('scenarios/presets', signal)
+
+// ---- P07 relationship graph --------------------------------------------------------------------
+export interface GraphNode {
+  id: string
+  kind: string
+  layer: string
+  asset_type: string
+  name: string | null
+  data_status: string
+  source_id: string
+  lon: number
+  lat: number
+  hop?: number
+}
+export interface GraphEdge {
+  source: string
+  target: string
+  relationship_id: string
+  type: string
+  rule: string
+  weight: number | null
+  unit: string
+  data_status: string
+  confidence: string
+}
+export interface Neighbourhood {
+  center: string
+  depth: number
+  truncated: boolean
+  nodes: GraphNode[]
+  edges: GraphEdge[]
+}
+export interface EdgeTypeInfo {
+  label: string
+  description: string
+  source: string[]
+  target: string[]
+  physical: boolean
+  active: boolean
+}
+export interface GraphSummary {
+  nodes: number
+  edges: number
+  node_kinds: Record<string, number>
+  edge_types: Record<string, number>
+  edge_data_status: Record<string, number>
+  components: number
+  isolated_nodes: number
+  registry: Record<string, EdgeTypeInfo>
+}
+
+export const getGraphSummary = (signal?: AbortSignal) => getJson<GraphSummary>('graph/summary', signal)
+export const getNeighbours = (id: string, depth: number, types: string[] = [], signal?: AbortSignal) =>
+  getJson<Neighbourhood>(
+    `graph/neighbors/${encodeURIComponent(id)}?depth=${depth}&max_nodes=200${types.length ? `&types=${types.join(',')}` : ''}`,
+    signal,
+  )
+
+export interface Trace {
+  drain: string
+  upstream: string[]
+  downstream: string[]
+}
+export const getTrace = (drainId: string, signal?: AbortSignal) =>
+  getJson<Trace>(`graph/trace/${encodeURIComponent(drainId)}`, signal)
+
+// ---- P08 rainfall cascade ------------------------------------------------------------------------
+export interface FloodParams {
+  preset: string | null
+  preset_source_id: string
+  rain_mm_h: number
+  duration_h: number
+  condition_scale: number
+}
+export interface DrainState {
+  q_in: number
+  capacity: number
+  q_out: number
+  overflow_m3s: number
+  load_ratio: number
+  state: 'ok' | 'near' | 'overloaded'
+}
+export interface ExplainStep {
+  from: string
+  edge: string
+  to: string
+  rule: string
+  label: string
+  formula: string
+  values: Record<string, unknown>
+}
+export interface Explanation {
+  asset_id: string
+  kind: string
+  state: string
+  trigger: string
+  path: ExplainStep[]
+  risk: { index: number; components: Record<string, number>; weights: Record<string, number>; formula: string; label: string }
+  inputs: { name: string; value: unknown; unit: string; source_id: string; data_status: string }[]
+  assumptions: string[]
+  data_status: string
+  confidence: string
+  mitigation: string[]
+  improve: string[]
+}
+export interface AffectedAsset {
+  asset_id: string
+  kind: string
+  name: string | null
+  state: string
+  risk: number
+  detail: string
+}
+export interface FloodSummary {
+  drains_overloaded: number
+  drains_near_capacity: number
+  drains_total: number
+  catchments_ponded: number
+  max_depth_m: number
+  total_overflow_m3: number
+  roads_impaired: number
+  roads_impassable: number
+  road_km_impaired: number
+  road_km_impassable: number
+  buildings_exposed: number
+  facilities_access_cut: number
+  facilities_access_impaired: number
+  facilities_affected: number
+}
+export interface FloodResult {
+  result_id: string
+  params: FloodParams
+  label: string
+  data_status: string
+  summary: FloodSummary
+  layers: {
+    drains: Record<string, DrainState>
+    roads: Record<string, { depth_m: number; state: 'impaired' | 'impassable'; via: string }>
+    catchments: Record<string, { depth_m: number; overflow_m3: number; capped: boolean; drain_id: string }>
+    buildings: Record<string, { depth_m: number; via: string }>
+    facilities: Record<string, { state: 'access_cut' | 'access_impaired'; roads_impassable: string[]; roads_impaired: string[] }>
+  }
+  affected: AffectedAsset[]
+  explanations: Record<string, Explanation>
+  assumptions: string[]
+  generated_at: string
+  offline?: boolean
+}
+export interface FloodRequest {
+  preset?: string | null
+  rain_mm_h?: number
+  duration_h?: number
+  condition_scale?: number
+}
+
+/** POST /scenarios/flood; offline → fixed demo snapshot for plain heavy/extreme presets. */
+export async function runFlood(body: FloodRequest, signal?: AbortSignal): Promise<FloodResult> {
+  try {
+    const r = await fetchWithTimeoutInit(apiUrl('scenarios/flood'), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }, signal, LAYER_TIMEOUT_MS)
+    if (!r.ok) throw new Error(`flood ${r.status}: ${(await r.json().catch(() => ({}))).detail ?? ''}`)
+    return (await r.json()) as FloodResult
+  } catch (err) {
+    if (signal?.aborted) throw err
+    const plain = body.rain_mm_h === undefined && body.duration_h === undefined && (body.condition_scale ?? 1) === 1
+    if (!plain || !body.preset || !['heavy', 'extreme'].includes(body.preset)) throw err
+    const r = await fetch(`${SNAPSHOT_BASE}flood_${body.preset}.json`, { signal })
+    if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) throw err
+    return { ...((await r.json()) as FloodResult), offline: true }
+  }
+}

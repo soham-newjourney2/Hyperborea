@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+html, body, #root { height: 100%; }
+body { margin: 0; background: #0b0f14; color: #d6dee8; }
+
+@keyframes tagIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
