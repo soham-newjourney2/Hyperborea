@@ -52,6 +52,19 @@ function stats(a: Asset): Stat[] {
               ['Ground', num(t.ground_elev_m, 1) && `${num(t.ground_elev_m, 1)} m`],
               ['To outfall', num(t.dist_to_outfall_m) && `${num(t.dist_to_outfall_m)} m`],
             ]
+        : a.layer === 'transformers'
+          ? [
+              ['Rating', num(t.rating_kva) && `${num(t.rating_kva)} kVA`],
+              ['Load', num(t.load_kva) && `${num(t.load_kva)} kVA (${num(t.loading_pct)} %)`],
+              ['Supplies', `${num(t.n_buildings) ?? 0} bldg · ${num(t.n_facilities) ?? 0} fac`],
+              ['Plinth', num(t.plinth_m, 1) && `${num(t.plinth_m, 1)} m`],
+            ]
+        : a.layer === 'substations'
+          ? [
+              ['Voltage', txt(t.kv) && `${txt(t.kv)} kV`],
+              ['Rating', num(t.rating_mva) && `${num(t.rating_mva)} MVA (assumed)`],
+              ['Role', txt(t.role)],
+            ]
         : a.layer === 'facilities'
           ? [
               ['Operator', txt(t.operator)],

@@ -3,7 +3,7 @@ import { UNITS } from '../lib/styles'
 import { useApp } from '../store'
 import ProvenanceBadge, { Chip } from './ProvenanceBadge'
 
-const HIDDEN_ATTRS = new Set(['height_status', 'u', 'v', 'key', 'formula'])
+const HIDDEN_ATTRS = new Set(['height_status', 'u', 'v', 'key', 'formula', 'buildings', 'facilities', 'transformers'])
 
 function CapacityBlock({ t }: { t: Record<string, unknown> }) {
   const n = Number(t.manning_n)

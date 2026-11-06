@@ -10,6 +10,7 @@ import { useApp } from './store'
 const WeatherPanel = lazy(() => import('./components/WeatherPanel'))
 const RelationshipExplorer = lazy(() => import('./components/RelationshipExplorer'))
 const DisasterLab = lazy(() => import('./components/DisasterLab'))
+const DevelopmentPanel = lazy(() => import('./components/DevelopmentPanel'))
 
 type ApiState = { kind: 'checking' } | { kind: 'ok'; health: Health } | { kind: 'offline' }
 
@@ -74,7 +75,7 @@ function useBootstrap(ok: boolean) {
         const deepLink = q.get('asset') // ?asset=<asset_id>
         if (deepLink) useApp.getState().select(deepLink)
         const tabQ = q.get('tab') // ?tab=weather|relations
-        if (tabQ === 'weather' || tabQ === 'relations' || tabQ === 'disaster') useApp.getState().setRightTab(tabQ)
+        if (tabQ === 'weather' || tabQ === 'relations' || tabQ === 'disaster' || tabQ === 'develop') useApp.getState().setRightTab(tabQ)
         const scen = q.get('scenario') // ?scenario=extreme → run preset on load (demo links)
         if (scen) {
           useApp.getState().setRightTab('disaster')
@@ -121,10 +122,10 @@ function WeatherChip() {
 
 function Tabs() {
   const { rightTab, setRightTab } = useApp()
-  const tab = (id: 'inspector' | 'relations' | 'disaster' | 'weather', label: string) => (
+  const tab = (id: 'inspector' | 'relations' | 'disaster' | 'develop' | 'weather', label: string) => (
     <button
       onClick={() => setRightTab(id)}
-      className={`flex-1 border-b-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+      className={`flex-1 border-b-2 px-1 py-2 text-[10px] font-semibold uppercase tracking-wider ${
         rightTab === id ? 'border-sky-400 text-sky-300' : 'border-transparent text-slate-500 hover:text-slate-300'
       }`}
     >
@@ -136,6 +137,7 @@ function Tabs() {
       {tab('inspector', 'Inspector')}
       {tab('relations', 'Relations')}
       {tab('disaster', 'Disaster')}
+      {tab('develop', 'Develop')}
       {tab('weather', 'Weather')}
     </div>
   )
@@ -195,7 +197,7 @@ export default function App() {
               <AssetInspector />
             ) : (
               <Suspense fallback={<p className="text-xs text-slate-500">Loading…</p>}>
-                {rightTab === 'relations' ? <RelationshipExplorer /> : rightTab === 'disaster' ? <DisasterLab /> : <WeatherPanel />}
+                {rightTab === 'relations' ? <RelationshipExplorer /> : rightTab === 'disaster' ? <DisasterLab /> : rightTab === 'develop' ? <DevelopmentPanel /> : <WeatherPanel />}
               </Suspense>
             )}
           </div>

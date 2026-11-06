@@ -101,3 +101,22 @@ Template:
 - data_status: curated   - Used by: P06, P08
 - Processing: manholes ≤ 80 m from an OSM canal line, ≥ 300 m apart, per connected component; components without a canal use an OSM pond/wetland/canal polygon ≤ 80 m
 - Quality / limitations: no pumping-station or real outfall data yet (O-04, Teammate A); real Sector V discharge is pumped — not modelled
+
+### cur_sites — Candidate development sites (S1–S3)
+- Provider / access: ours, `pipelines/make_sites.py`; confirmed by the user 2026-11-06   - Licence: ODbL-derived (OSM land use, buildings, roads)
+- Coverage: 3 × 40 × 40 m building-free plots in Sector V (S1 construction site, S2 industrial / flood-prone in the extreme preset, S3 commercial)
+- data_status: curated   - Used by: P09 development assessment
+- Quality / limitations: "vacant" inferred from OSM gaps — not a planning allocation; ownership, setbacks and FAR unknown
+
+### norms — Development screening norms
+- Provider / access: `config/norms.yaml` (floor height, occupant load, water lpcd, load density, diversity, runoff C, detention effect, check thresholds, weights)
+- Sources: NBC 2016 Part 4 occupant loads; CPHEEO Manual on Water Supply & Treatment (1999) lpcd; others assumed — each value carries a note   - Verified: no — Teammate C to confirm NBC/CPHEEO figures
+- data_status: curated (assumptions)   - Used by: P09
+
+### syn_power — Hyperborea simulated electrical distribution network
+- Provider / access: ours, `pipelines/build_power.py` (seed 42)   - Licence: ours (positions derived from OSM buildings/roads; substations from OSM, ODbL)   - Verified: n/a
+- Accessed: 2026-11-06   - Coverage: 194 transformers (179 distribution 100–630 kVA, 15 dedicated HT 1–2.5 MVA), 8 schematic 11 kV feeders; substations Mahishbathan 33/11 kV (primary, 2 × 31.5 MVA assumed) ← Salt Lake grid (132/33 kV assumed), positions from OSM
+- data_status: **simulated** (transformers, feeders) / curated (substation positions) — NOT the utility's grid (D-09)   - Used by: P10 cascade (transformer plinth 0.6 m → protective shutdown), P09 electrical check
+- Processing: building load = BUA × W/m² (15 residential / 60 commercial by tag → OSM landuse → footprint rule) × diversity 0.6 / pf 0.9 (59.3 MVA total); k-means + bisection groups ≤ 504 kVA peak; rating = smallest standard ≥ 1.25 × peak; transformer on nearest road; facilities → nearest transformer
+- Quality / limitations: no real feeder routes, ratings, loading or backup power; feeders are straight schematic lines
+- Attribution text shown in UI: "SIMULATED NETWORK — not the actual utility grid"

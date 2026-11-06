@@ -14,7 +14,8 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "frontend" / "public" / "snapshots"
 # Same extents the map requests (MapView FULL_EXTENT): these two in full, the rest pilot-only.
-FULL_EXTENT = {"facilities", "boundary", "drains", "drain_nodes", "outfalls", "catchments"}
+FULL_EXTENT = {"facilities", "boundary", "drains", "drain_nodes", "outfalls", "catchments", "sites",
+               "substations", "transformers", "feeders"}  # must match MapView FULL_EXTENT
 
 
 def main(base: str = "http://127.0.0.1:8000/api") -> None:
@@ -40,6 +41,13 @@ def main(base: str = "http://127.0.0.1:8000/api") -> None:
         files[f"flood_{preset}.json"] = body
         (ROOT / "data" / "snapshots").mkdir(parents=True, exist_ok=True)
         (ROOT / "data" / "snapshots" / f"flood_{preset}.json").write_bytes(body)
+    # P09 fixed demo comparison: A = S2 as-is, B = S2 + detention + drain upsize, C = S1 alternative site.
+    cmp = {"options": [{"site_id": "S2", "label": "A · S2 as proposed"},
+                       {"site_id": "S2", "upgrades": ["detention", "drain_upsize", "transformer"], "label": "B · S2 + upgrades"},
+                       {"site_id": "S1", "label": "C · alternative site S1"}]}
+    body = c.post("/development/compare", json=cmp).raise_for_status().content
+    files["dev_compare.json"] = body
+    (ROOT / "data" / "snapshots" / "dev_compare.json").write_bytes(body)
     # Backend's own weather fallback (cache format) → data/snapshots/weather.json
     cache = ROOT / "local" / "cache" / "weather.json"
     if cache.exists():

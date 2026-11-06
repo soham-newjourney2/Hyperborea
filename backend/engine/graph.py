@@ -89,11 +89,32 @@ def build_graph(layers: dict[str, gpd.GeoDataFrame]) -> nx.MultiDiGraph:
                                  data_status="modelled", confidence=_access_conf(d),
                                  assumptions="facility unusable if all its access roads are impassable")
 
+    # Electrical supply (P10, simulated): substation → transformer → building / facility; facility DEPENDS_ON transformer.
+    subs, trf = layers.get("substations"), layers.get("transformers")
+    if subs is not None and not subs.empty:
+        for aid, a in zip(subs.asset_id, _attrs(subs)):
+            if a.get("supplies_from"):
+                add_edge(G, "SUPPLIES", a["supplies_from"], aid, rule="grid substation feeds the primary 33/11 kV substation",
+                         data_status="curated", confidence="low", assumptions="positions from OSM; topology assumed")
+    if trf is not None and not trf.empty:
+        for aid, a in zip(trf.asset_id, _attrs(trf)):
+            add_edge(G, "SUPPLIES", a.get("substation_id"), aid, weight=a.get("load_kva"), unit="kVA",
+                     rule=f"11 kV schematic feeder {a.get('feeder_id')} from the primary substation",
+                     data_status="simulated", confidence="low", assumptions="feeder routes schematic (P10)")
+            for b in a.get("buildings", []):
+                add_edge(G, "SUPPLIES", aid, b, rule="building grouped to this transformer (k-means by location, load-capped)",
+                         data_status="simulated", confidence="low")
+            for f in a.get("facilities", []):
+                add_edge(G, "SUPPLIES", aid, f, rule="facility supplied by its nearest transformer", data_status="simulated",
+                         confidence="low")
+                add_edge(G, "DEPENDS_ON", f, aid, rule="facility needs its supplying transformer (backup power unknown)",
+                         data_status="simulated", confidence="low", assumptions="backup generators/UPS not mapped")
+
     # Containment in catchments (buildings, manholes).
     cats = layers.get("catchments")
     if cats is not None and not cats.empty:
         c = cats[["asset_id", "geometry"]].to_crs(UTM).rename(columns={"asset_id": "catchment_id"})
-        for name in ("buildings", "drain_nodes"):
+        for name in ("buildings", "drain_nodes", "transformers"):
             g = layers.get(name)
             if g is None or g.empty:
                 continue

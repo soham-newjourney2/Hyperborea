@@ -44,6 +44,7 @@ export const UNITS: Record<string, string> = {
   diameter_m: 'm', slope: 'm/m', capacity_m3s: 'm³/s', effective_capacity_m3s: 'm³/s', catchment_m2: 'm²',
   upstream_area_m2: 'm²', elev_up_m: 'm', elev_down_m: 'm', ground_elev_m: 'm', dist_to_outfall_m: 'm',
   distance_to_water_m: 'm', roof_m2: 'm²', road_m2: 'm²', other_m2: 'm²',
+  rating_kva: 'kVA', unit_kva: 'kVA', load_kva: 'kVA', loading_pct: '%', plinth_m: 'm', rating_mva: 'MVA',
 }
 
 // ---- P06 drainage (sequential, one hue family; dark canvas → brighter = more) --------------------------
@@ -82,6 +83,9 @@ export const KIND: Record<string, { label: string; color: string; shape: string 
   facility: { label: 'Facility', color: '#d55181', shape: 'star' },
   outfall: { label: 'Outfall', color: '#008300', shape: 'triangle' },
   manhole: { label: 'Manhole', color: '#9085e9', shape: 'ellipse' },
+  // slot 8 (red) shared by the two power kinds; shape tells them apart
+  transformer: { label: 'Transformer', color: '#e66767', shape: 'vee' },
+  substation: { label: 'Substation', color: '#e66767', shape: 'octagon' },
 }
 
 // ---- P08 scenario styling (status colours carry state; legend always pairs them with labels) -----------
@@ -99,3 +103,14 @@ export const SCENARIO = {
 export const PONDING_STOPS = ['#1e3a8a', '#2563eb', '#60a5fa']
 /** Ponding depth 0.15–1.0 m → blue. */
 export const pondingColor = (d: number) => ramp(PONDING_STOPS, (d - 0.15) / 0.85)
+
+// ---- P10 electrical (simulated) --------------------------------------------------------------------
+export const POWER_LAYERS = ['substations', 'transformers', 'feeders']
+export const LOADING_STOPS: [number, string, string][] = [
+  [60, '#22c55e', '< 60 % loading'],
+  [80, '#f59e0b', '60–80 %'],
+  [Infinity, '#ef4444', '> 80 %'],
+]
+export const loadingColor = (pct: number) => LOADING_STOPS.find(([lim]) => pct < lim)![1]
+export const FEEDER_COLOR = '#facc15'
+export const SCENARIO_POWER = { transformer_shutdown: '#ef4444', building_no_power: '#1e293b' }

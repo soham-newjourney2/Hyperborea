@@ -358,6 +358,7 @@ export interface Explanation {
   confidence: string
   mitigation: string[]
   improve: string[]
+  also?: { title: string; path: ExplainStep[] }[]
 }
 export interface AffectedAsset {
   asset_id: string
@@ -382,6 +383,9 @@ export interface FloodSummary {
   facilities_access_cut: number
   facilities_access_impaired: number
   facilities_affected: number
+  transformers_shutdown?: number
+  buildings_power_loss?: number
+  facilities_power_loss?: number
 }
 export interface FloodResult {
   result_id: string
@@ -394,7 +398,9 @@ export interface FloodResult {
     roads: Record<string, { depth_m: number; state: 'impaired' | 'impassable'; via: string }>
     catchments: Record<string, { depth_m: number; overflow_m3: number; capped: boolean; drain_id: string }>
     buildings: Record<string, { depth_m: number; via: string }>
-    facilities: Record<string, { state: 'access_cut' | 'access_impaired'; roads_impassable: string[]; roads_impaired: string[] }>
+    facilities: Record<string, { state: 'access_cut' | 'access_impaired' | 'power_loss'; roads_impassable: string[]; roads_impaired: string[]; power?: string; backup_power?: string }>
+    transformers?: Record<string, { depth_m: number; state: 'shutdown'; via: string; buildings: number }>
+    buildings_power?: Record<string, string>
   }
   affected: AffectedAsset[]
   explanations: Record<string, Explanation>
@@ -426,5 +432,77 @@ export async function runFlood(body: FloodRequest, signal?: AbortSignal): Promis
     const r = await fetch(`${SNAPSHOT_BASE}flood_${body.preset}.json`, { signal })
     if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) throw err
     return { ...((await r.json()) as FloodResult), offline: true }
+  }
+}
+
+// ---- P09 development assessment ------------------------------------------------------------------
+export interface DevCheck {
+  dimension: string
+  status: 'pass' | 'conditional' | 'fail' | 'insufficient_data'
+  value?: number | string
+  unit?: string
+  detail: string
+  threshold?: string
+  data_status: string
+  source_ids: string[]
+  numbers?: Record<string, unknown>
+  note?: string
+}
+export interface DevAssessment {
+  assessment_id: string
+  label: string
+  data_status: string
+  params: { site_id: string | null; use: string; floors: number; design_preset: string; upgrades: string[] }
+  upgrades_applied: { id: string; label: string }[]
+  geometry: { type: 'Polygon'; coordinates: number[][][] }
+  derived: Record<string, number>
+  checks: DevCheck[]
+  verdict: string
+  index: { value: number | null; weights: Record<string, number>; scores: Record<string, number | null>; label: string }
+  key_dimensions: string[]
+  assumptions: string[]
+  label_option?: string | null
+}
+export interface DevRequest {
+  site_id?: string | null
+  geometry?: { type: 'Polygon'; coordinates: number[][][] } | null
+  use: 'residential' | 'commercial'
+  floors: number
+  upgrades: string[]
+  design_preset: string
+  label?: string
+}
+export interface DevCompare {
+  options: (DevAssessment & { name: string })[]
+  table: Record<string, string>[]
+  verdicts: Record<string, string>
+  index: Record<string, number | null>
+  what_changed: Record<string, string[]>
+  label: string
+  offline?: boolean
+}
+
+async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+  const r = await fetchWithTimeoutInit(apiUrl(path), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  }, signal, LAYER_TIMEOUT_MS)
+  if (!r.ok) throw new Error(String((await r.json().catch(() => ({}))).detail ?? r.status))
+  return (await r.json()) as T
+}
+
+export const assessDevelopment = (body: DevRequest, signal?: AbortSignal) =>
+  postJson<DevAssessment>('development/assess', body, signal)
+
+/** Compare options; offline → the fixed A/B/C demo snapshot. */
+export async function compareDevelopment(options: DevRequest[], signal?: AbortSignal): Promise<DevCompare> {
+  try {
+    return await postJson<DevCompare>('development/compare', { options }, signal)
+  } catch (err) {
+    if (signal?.aborted) throw err
+    const r = await fetch(`${SNAPSHOT_BASE}dev_compare.json`, { signal })
+    if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) throw err
+    return { ...((await r.json()) as DevCompare), offline: true }
   }
 }

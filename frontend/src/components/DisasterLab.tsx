@@ -11,6 +11,8 @@ const STATE_COLOR: Record<string, string> = {
   above_plinth: SCENARIO.building_exposed,
   access_cut: SCENARIO.facility_cut,
   access_impaired: SCENARIO.facility_impaired,
+  power_loss: SCENARIO.facility_cut,
+  shutdown: SCENARIO.road_impassable,
 }
 const STATE_LABEL: Record<string, string> = {
   overloaded: 'overloaded',
@@ -19,6 +21,8 @@ const STATE_LABEL: Record<string, string> = {
   above_plinth: 'water above plinth',
   access_cut: 'access cut',
   access_impaired: 'access impaired',
+  power_loss: 'power lost (backup unknown)',
+  shutdown: 'shut down (flooded)',
 }
 
 function Slider({ label, unit, value, min, max, step, onChange }: {
@@ -68,6 +72,14 @@ function Why({ ex }: { ex: Explanation }) {
           </li>
         ))}
       </ol>
+      {ex.also?.map((a) => (
+        <div key={a.title} className="rounded border border-slate-700 p-2">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Also · {a.title} chain</p>
+          <ol className="space-y-1 text-[11px] text-slate-300">
+            {a.path.slice(-3).map((s, i) => <li key={i}>→ {s.label}</li>)}
+          </ol>
+        </div>
+      ))}
       <div className="rounded bg-slate-950/60 p-2 text-[11px]">
         <div className="flex items-baseline justify-between">
           <span className="text-slate-400">Risk index</span>
@@ -194,7 +206,9 @@ export default function DisasterLab() {
             <Tile label="Drains overloaded" value={`${s.drains_overloaded}/${s.drains_total}`} sub={`${s.drains_near_capacity} near capacity`} tone={SCENARIO.drain_overloaded} />
             <Tile label="Roads impassable" value={`${s.road_km_impassable} km`} sub={`${s.roads_impassable} edges · ${s.roads_impaired} impaired`} tone={SCENARIO.road_impassable} />
             <Tile label="Buildings above plinth" value={s.buildings_exposed} sub={`${s.catchments_ponded} catchments ponded`} tone={SCENARIO.building_exposed} />
-            <Tile label="Facilities affected" value={s.facilities_affected} sub={`${s.facilities_access_cut} cut · ${s.facilities_access_impaired} impaired`} tone={SCENARIO.facility_impaired} />
+            <Tile label="Facilities affected" value={s.facilities_affected} sub={`${s.facilities_power_loss ?? 0} power lost · ${s.facilities_access_impaired} access impaired`} tone={SCENARIO.facility_impaired} />
+            <Tile label="Transformers shut down" value={s.transformers_shutdown ?? 0} sub="simulated network, plinth 0.6 m" tone={SCENARIO.road_impassable} />
+            <Tile label="Buildings without power" value={s.buildings_power_loss ?? 0} sub="supplied by a flooded transformer" tone="#64748b" />
           </div>
 
           {ex && <Why ex={ex} />}

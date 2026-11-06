@@ -19,21 +19,24 @@ EDGE_TYPES: dict[str, dict] = {
         "active": True, "description": "The asset lies inside this drainage catchment; its rain runs off there.",
     },
     "DEPENDS_ON": {
-        "label": "depends on", "source": ["facility"], "target": ["road"], "physical": False, "active": True,
+        "label": "depends on", "source": ["facility"], "target": ["road", "transformer"], "physical": False, "active": True,
         "description": "Functional dependency: the facility needs these road edges (≤ 50 m, up to 3) for access "
-                       "by ambulances, staff and users.",
+                       "and its supplying transformer for power (P10).",
     },
     # Defined in planning §6, populated by later phases.
     "SUPPLIES": {"label": "supplies power to", "source": ["substation", "transformer"],
-                 "target": ["transformer", "building", "facility"], "physical": True, "active": False,
-                 "description": "Electrical supply (P10)."},
+                 "target": ["substation", "transformer", "building", "facility"], "physical": True, "active": True,
+                 "description": "Electrical supply on the SIMULATED network: grid → primary substation → 11 kV "
+                                "transformer → building / facility (P10)."},
     "EXPOSED_TO": {"label": "exposed to", "source": ["*"], "target": ["hazard_zone"], "physical": False,
                    "active": False, "description": "Scenario-only exposure to a hazard zone (P08)."},
     "PROPOSED_ADJACENT_TO": {"label": "proposed next to", "source": ["proposed_site"], "target": ["*"],
-                             "physical": False, "active": False,
-                             "description": "Scenario-only adjacency of a proposed development (P09)."},
+                             "physical": False, "active": False, "scenario_only": True,
+                             "description": "Scenario-only adjacency of a proposed development to a drain/road "
+                                            "(P09 overlay; never added to the baseline graph)."},
 }
 
 # layer → node kind (UI colours/shapes by kind; asset_type keeps the detail, e.g. hospital)
 LAYER_KIND = {"buildings": "building", "roads": "road", "drains": "drain", "drain_nodes": "manhole",
-              "outfalls": "outfall", "catchments": "catchment", "facilities": "facility"}
+              "outfalls": "outfall", "catchments": "catchment", "facilities": "facility",
+              "substations": "substation", "transformers": "transformer"}

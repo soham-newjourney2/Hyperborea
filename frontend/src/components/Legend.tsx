@@ -1,5 +1,6 @@
 import { STATUS_STYLES } from '../lib/provenance'
-import { BUILDING_USE, CAPACITY_STOPS, FACILITY, PONDING_STOPS, ROAD_CLASS, RUNOFF_STOPS, SCENARIO } from '../lib/styles'
+import { BUILDING_USE, CAPACITY_STOPS, FACILITY, FEEDER_COLOR, LOADING_STOPS, PONDING_STOPS, ROAD_CLASS, RUNOFF_STOPS, SCENARIO,
+  SCENARIO_POWER } from '../lib/styles'
 import { useApp } from '../store'
 import { Chip } from './ProvenanceBadge'
 
@@ -29,6 +30,8 @@ export default function Legend() {
             <Swatch color={SCENARIO.road_impassable} label="Road impassable ≥ 0.30 m" shape="line" />
             <Swatch color={SCENARIO.building_exposed} label="Building above plinth" />
             <Swatch color={SCENARIO.facility_impaired} label="Facility access hit" shape="dot" />
+            <Swatch color={SCENARIO_POWER.transformer_shutdown} label="Transformer shut down" shape="dot" />
+            <Swatch color={SCENARIO_POWER.building_no_power} label="Building without power" />
           </ul>
           <div className="mt-1 h-2 rounded" style={{ background: `linear-gradient(90deg, ${PONDING_STOPS.join(',')})` }} />
           <div className="mt-0.5 flex justify-between text-[10px] text-slate-500">
@@ -56,6 +59,16 @@ export default function Legend() {
           <h4 className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">Facilities</h4>
           <ul className="grid grid-cols-2 gap-x-2 gap-y-0.5">
             {Object.entries(FACILITY).map(([k, f]) => <Swatch key={k} color={f.color} label={`${f.glyph} ${f.label}`} shape="dot" />)}
+          </ul>
+        </div>
+      )}
+      {(visible.transformers || visible.feeders) && (
+        <div>
+          <h4 className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">Electrical (simulated) · T = transformer loading</h4>
+          <ul className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+            {LOADING_STOPS.map(([, c, l]) => <Swatch key={l} color={c} label={l} shape="dot" />)}
+            <Swatch color={FEEDER_COLOR} label="11 kV feeder (schematic)" shape="line" />
+            <Swatch color="#e66767" label="S = substation (OSM)" shape="dot" />
           </ul>
         </div>
       )}

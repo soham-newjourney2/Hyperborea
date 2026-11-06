@@ -26,6 +26,10 @@ LAYER_META: dict[str, tuple[str, str, bool]] = {
     "catchments": ("Catchments (simulated)", "Drainage", False),
     "drain_nodes": ("Manholes (simulated)", "Drainage", False),
     "landuse": ("Land use", "Land", False),
+    "sites": ("Candidate sites", "Development", False),
+    "substations": ("Substations (OSM, curated)", "Energy", False),
+    "transformers": ("Transformers (simulated)", "Energy", False),
+    "feeders": ("11 kV feeders (schematic)", "Energy", False),
     "osm_power": ("Power (OSM)", "Energy", False),
 }
 
@@ -72,11 +76,19 @@ class LayerStore:
             return store
         files = [path] + sorted(p for p in path.parent.glob("*.gpkg") if p != path)
         found = [(n, f) for f in files for n, _ in pyogrio.list_layers(f)]
+        sites = path.parents[1] / "curated" / "sites.geojson"  # P09 curated candidate sites
+        if sites.exists():
+            found.append(("sites", sites))
         order = {n: i for i, n in enumerate(LAYER_META)}
         for name, f in sorted(found, key=lambda nf: order.get(nf[0], 99)):
             if name in store.layers:
                 raise ValueError(f"layer {name!r} defined in two GeoPackages")
-            gdf = gpd.read_file(f, layer=name)
+            gdf = gpd.read_file(f) if f.suffix == ".geojson" else gpd.read_file(f, layer=name)
+            if f.suffix == ".geojson":  # GDAL parses JSON-looking strings into dicts; keep the GPKG convention (text)
+                gdf["attrs"] = gdf["attrs"].map(lambda a: a if isinstance(a, str) else json.dumps(a))
+                for col in gdf.columns:  # …and ISO strings into Timestamps
+                    if str(gdf[col].dtype).startswith("datetime"):
+                        gdf[col] = gdf[col].map(lambda t: t.isoformat() if t == t and t is not None else None)
             store.layers[name] = Layer(name, gdf, _geojson(gdf), _geojson(gdf[gdf["in_pilot"].astype(bool)]))
             store.index.update({aid: (name, i) for i, aid in enumerate(gdf["asset_id"])})
         return store

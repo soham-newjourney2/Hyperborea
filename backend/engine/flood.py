@@ -40,6 +40,7 @@ class FloodContext:
     bld: dict[str, dict]
     fac: dict[str, dict]
     upstream_n: dict[str, int] = field(default_factory=dict)
+    trf: dict[str, dict] = field(default_factory=dict)  # P10 simulated transformers
 
 
 def build_context(layers: dict[str, gpd.GeoDataFrame], G: nx.MultiDiGraph) -> FloodContext:
@@ -89,10 +90,20 @@ def build_context(layers: dict[str, gpd.GeoDataFrame], G: nx.MultiDiGraph) -> Fl
     fac = {}
     for n, d in G.nodes(data=True):
         if d.get("kind") == "facility":
-            roads = [v for _, v, k in G.out_edges(n, keys=True) if k == "DEPENDS_ON"]
-            fac[n] = {"type": d.get("asset_type"), "name": d.get("name"), "roads": roads}
+            dep = [v for _, v, k in G.out_edges(n, keys=True) if k == "DEPENDS_ON"]
+            fac[n] = {"type": d.get("asset_type"), "name": d.get("name"),
+                      "roads": [v for v in dep if G.nodes[v].get("kind") == "road"],
+                      "transformers": [v for v in dep if G.nodes[v].get("kind") == "transformer"]}
     upstream_n = {d: int(v.get("n_upstream") or 0) for d, v in drain.items()}
-    return FloodContext(order, drain, up, cat, road, road_cats, bld, fac, upstream_n)
+    trf = {}
+    tl = layers.get("transformers")
+    if tl is not None and not tl.empty:
+        for aid, nm, a in zip(tl.asset_id, tl["name"], tl["attrs"].map(_attrs)):
+            cats = [v for _, v, k in G.out_edges(aid, keys=True) if k == "LOCATED_WITHIN"] if aid in G else []
+            trf[aid] = {"name": nm, "catchment_id": cats[0] if cats else None, "plinth_m": a.get("plinth_m", 0.6),
+                        "rating_kva": a.get("rating_kva"), "load_kva": a.get("load_kva"),
+                        "buildings": a.get("buildings", []), "facilities": a.get("facilities", [])}
+    return FloodContext(order, drain, up, cat, road, road_cats, bld, fac, upstream_n, trf)
 
 
 # ---- one run ---------------------------------------------------------------------------------------------
@@ -118,7 +129,10 @@ def road_class(h) -> str:
     return "local"
 
 
-def run_flood(ctx: FloodContext, params: dict) -> dict:
+def run_flood(ctx: FloodContext, params: dict, overlay: dict | None = None) -> dict:
+    """overlay (P09, scenario only): {'extra_inflow': {drain: m³/s}, 'capacity': {drain: full-flow m³/s}}."""
+    extra = (overlay or {}).get("extra_inflow", {})
+    cap_override = (overlay or {}).get("capacity", {})
     fr, rr = flood_rules(), risk_rules()
     rain, dur, scale = float(params["rain_mm_h"]), float(params["duration_h"]), float(params.get("condition_scale", 1.0))
     secs = dur * 3600
@@ -131,11 +145,11 @@ def run_flood(ctx: FloodContext, params: dict) -> dict:
     for d in ctx.order:
         v = ctx.drain[d]
         c = ctx.cat.get(v["catchment_id"])
-        q_local = rational_runoff(c["runoff_c"], rain, c["area_m2"]) if c else 0.0
+        q_local = max((rational_runoff(c["runoff_c"], rain, c["area_m2"]) if c else 0.0) + extra.get(d, 0.0), 0.0)
         q_up = sum(outflow[u] for u in ctx.up[d])
         q_in = q_local + q_up
         cond = min(max(v["condition_factor"] * scale, 0.05), 1.0)
-        cap = v["capacity_m3s"] * cond
+        cap = cap_override.get(d, v["capacity_m3s"]) * cond
         q_out = min(q_in, cap)
         over = q_in - q_out
         outflow[d] = q_out
@@ -169,17 +183,29 @@ def run_flood(ctx: FloodContext, params: dict) -> dict:
     B = {bid: {"depth_m": C[b["catchment_id"]]["depth_m"], "via": b["catchment_id"]}
          for bid, b in ctx.bld.items() if b["catchment_id"] in C and C[b["catchment_id"]]["depth_m"] >= plinth}
 
-    # 6: facilities via DEPENDS_ON roads (only roads inside the modelled pilot count)
+    # 5b (P10): transformers standing in water >= plinth -> protective shutdown -> supplied buildings lose power
+    TS = {}
+    for tid, t in ctx.trf.items():
+        c = C.get(t["catchment_id"])
+        if c and c["depth_m"] >= t["plinth_m"]:
+            TS[tid] = {"depth_m": c["depth_m"], "via": t["catchment_id"], "state": "shutdown",
+                       "buildings": len(t["buildings"]), "facilities": t["facilities"]}
+    BP = {b: tid for tid in TS for b in ctx.trf[tid]["buildings"]}
+
+    # 6: facilities — access via DEPENDS_ON roads (pilot roads only) + power via DEPENDS_ON transformer
     F = {}
     for fid, f in ctx.fac.items():
         modelled = [r for r in f["roads"] if r in ctx.road_cats]
-        if not modelled:
-            continue
         bad = [r for r in modelled if R.get(r, {}).get("state") == "impassable"]
         slow = [r for r in modelled if R.get(r, {}).get("state") == "impaired"]
-        state = "access_cut" if len(bad) == len(modelled) else "access_impaired" if bad or slow else "ok"
-        if state != "ok":
-            F[fid] = {"state": state, "roads_impassable": bad, "roads_impaired": slow, "roads_modelled": modelled}
+        access = ("not_assessed" if not modelled else "access_cut" if len(bad) == len(modelled)
+                  else "access_impaired" if bad or slow else "ok")
+        lost = [t for t in f.get("transformers", []) if t in TS]
+        power = "loss" if lost else ("ok" if f.get("transformers") else "not_modelled")
+        if power == "loss" or access in ("access_cut", "access_impaired"):
+            F[fid] = {"state": "power_loss" if lost else access, "access": access, "power": power,
+                      "backup_power": "unknown", "transformers_shutdown": lost,
+                      "roads_impassable": bad, "roads_impaired": slow, "roads_modelled": modelled}
 
     # 7–8: risk + explanations
     rain_src = params.get("preset_source_id", "syn_rain")
@@ -272,26 +298,63 @@ def run_flood(ctx: FloodContext, params: dict) -> dict:
                             "formula": "depth ≥ plinth", "values": {"depth_m": b["depth_m"]}}],
                         "risk": risk, "mitigation": ["Flood barriers / raise thresholds", "Move ground-floor assets"], **common}
 
+    for tid, t in TS.items():
+        info = ctx.trf[tid]
+        c = C[t["via"]]
+        risk = _risk({"hazard": t["depth_m"] / dmax, "exposure": 1.0, "vulnerability": 0.7,
+                      "consequence": min(len(info["buildings"]) / 40 + 0.3 * bool(info["facilities"]), 1)})
+        affected.append({"asset_id": tid, "kind": "transformer", "name": info["name"], "state": "shutdown",
+                         "risk": risk["index"], "detail": f"{t['depth_m']:.2f} m ≥ plinth {info['plinth_m']} m · "
+                                                         f"{len(info['buildings'])} buildings off"})
+        explain[tid] = {"asset_id": tid, "kind": "transformer", "state": "shutdown",
+                        "trigger": f"ponding {t['depth_m']:.2f} m ≥ transformer plinth {info['plinth_m']} m",
+                        "path": drain_steps(c["drain_id"]) + [pond_step(t["via"]), {
+                            "from": t["via"], "edge": "LOCATED_WITHIN", "to": tid,
+                            "rule": f"protective shutdown when water ≥ plinth {info['plinth_m']} m (config/flood.yaml, assumed)",
+                            "label": f"transformer ({info['rating_kva']} kVA, {len(info['buildings'])} buildings) under "
+                                     f"{t['depth_m']:.2f} m → protective shutdown", "formula": "depth ≥ plinth",
+                            "values": {"depth_m": t["depth_m"], "plinth_m": info["plinth_m"]}}],
+                        "risk": risk, "mitigation": ["Raise transformer plinth above 1 m", "Mobile substation / genset on standby"],
+                        **common}
+
     for fid, f in F.items():
         info = ctx.fac[fid]
-        worst = max((R[r] for r in f["roads_impassable"] + f["roads_impaired"]), key=lambda x: x["depth_m"])
-        worst_id = next(r for r in f["roads_impassable"] + f["roads_impaired"] if R[r] is worst)
-        share = len(f["roads_impassable"]) / len(f["roads_modelled"])
-        risk = _risk({"hazard": worst["depth_m"] / dmax, "exposure": max(share, 0.3 if f["roads_impaired"] else 0),
+        parts, chains = [], []
+        if f["power"] == "loss":
+            tid = f["transformers_shutdown"][0]
+            parts.append("power lost (transformer shut down; backup power unknown)")
+            chains.append(("power", explain[tid]["path"] + [{
+                "from": tid, "edge": "SUPPLIES / DEPENDS_ON", "to": fid,
+                "rule": "facility is supplied by this transformer; backup generator / UPS not mapped",
+                "label": "supplying transformer off → facility loses grid power · backup power: UNKNOWN",
+                "formula": "supplier shutdown ⇒ power loss", "values": {"transformer": tid, "backup_power": "unknown"}}]))
+        if f["access"] in ("access_cut", "access_impaired"):
+            road_hits = f["roads_impassable"] + f["roads_impaired"]
+            worst_id = max(road_hits, key=lambda r: R[r]["depth_m"])
+            lbl = ("all access roads impassable → access cut" if f["access"] == "access_cut" else
+                   f"{len(f['roads_impassable'])} impassable + {len(f['roads_impaired'])} impaired of "
+                   f"{len(f['roads_modelled'])} access roads")
+            parts.append(lbl)
+            chains.append(("access", explain[worst_id]["path"] + [{
+                "from": worst_id, "edge": "DEPENDS_ON", "to": fid,
+                "rule": "facility needs its access roads (≤ 50 m, up to 3); all impassable → cut", "label": lbl,
+                "formula": "count impassable / modelled access roads",
+                "values": {"impassable": len(f["roads_impassable"]), "impaired": len(f["roads_impaired"]),
+                           "modelled": len(f["roads_modelled"])}}]))
+        depth = max([R[r]["depth_m"] for r in f["roads_impassable"] + f["roads_impaired"]]
+                    + [TS[t]["depth_m"] for t in f["transformers_shutdown"]])
+        share = len(f["roads_impassable"]) / len(f["roads_modelled"]) if f["roads_modelled"] else 0
+        risk = _risk({"hazard": depth / dmax,
+                      "exposure": 1.0 if f["power"] == "loss" else max(share, 0.3 if f["roads_impaired"] else 0),
                       "vulnerability": rr["vulnerability"]["facility"],
                       "consequence": rr["consequence"].get(info["type"], 0.5)})
-        label = "all access roads impassable → access cut" if f["state"] == "access_cut" else \
-            f"{len(f['roads_impassable'])} impassable + {len(f['roads_impaired'])} impaired of {len(f['roads_modelled'])} access roads"
+        label = " + ".join(parts)
         affected.append({"asset_id": fid, "kind": "facility", "name": info["name"], "state": f["state"],
                          "risk": risk["index"], "detail": label})
         explain[fid] = {"asset_id": fid, "kind": "facility", "state": f["state"], "trigger": label,
-                        "path": explain[worst_id]["path"] + [{
-                            "from": worst_id, "edge": "DEPENDS_ON", "to": fid,
-                            "rule": "facility needs its access roads (≤ 50 m, up to 3); all impassable → cut",
-                            "label": label, "formula": "count impassable / modelled access roads",
-                            "values": {"impassable": len(f["roads_impassable"]), "impaired": len(f["roads_impaired"]),
-                                       "modelled": len(f["roads_modelled"])}}],
-                        "risk": risk, "mitigation": ["Pre-plan alternative ambulance/fire routes (P12)",
+                        "path": chains[0][1], "also": [{"title": k, "path": p} for k, p in chains[1:]],
+                        "risk": risk, "mitigation": ["Verify / test backup generator and fuel (backup status unknown)",
+                                                     "Pre-plan alternative ambulance/fire routes (P12)",
                                                      "Priority pumping on access roads"], **common}
 
     affected.sort(key=lambda a: (-a["risk"], a["kind"], a["asset_id"]))
@@ -310,11 +373,15 @@ def run_flood(ctx: FloodContext, params: dict) -> dict:
         "facilities_access_cut": sum(f["state"] == "access_cut" for f in F.values()),
         "facilities_access_impaired": sum(f["state"] == "access_impaired" for f in F.values()),
         "facilities_affected": len(F),
+        "transformers_shutdown": len(TS),
+        "buildings_power_loss": len(BP),
+        "facilities_power_loss": sum(f["power"] == "loss" for f in F.values()),
     }
     return {
         "result_id": params_id(params), "params": params, "label": LABEL, "data_status": DATA_STATUS,
         "summary": summary,
-        "layers": {"drains": D, "roads": R, "catchments": C, "buildings": B, "facilities": F},
+        "layers": {"drains": D, "roads": R, "catchments": C, "buildings": B, "facilities": F,
+                   "transformers": TS, "buildings_power": BP},
         "affected": affected, "explanations": explain,
         "assumptions": fr["assumptions"], "rules": {"flood": fr, "risk": rr},
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

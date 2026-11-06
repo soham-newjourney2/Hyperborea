@@ -32,7 +32,8 @@ import {
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { getAsset, getLayer, type Asset, type FloodResult, type Region } from '../lib/api'
 import { statusStyle } from '../lib/provenance'
-import { DRAINAGE_LAYERS, FACILITY, SCENARIO, buildingColor, capacityColor, drainWidth, pondingColor, roadStyle, runoffColor } from '../lib/styles'
+import { DRAINAGE_LAYERS, FACILITY, FEEDER_COLOR, POWER_LAYERS, SCENARIO, SCENARIO_POWER, buildingColor, capacityColor, drainWidth,
+  loadingColor, pondingColor, roadStyle, runoffColor } from '../lib/styles'
 import { useApp, type Quality } from '../store'
 import InfoTag from './InfoTag'
 
@@ -41,7 +42,8 @@ const NOW = JulianDate.fromIso8601('2026-11-06T05:30:00Z')
 const css = (c: string, a = 1) => Color.fromCssColorString(c).withAlpha(a)
 const HIGHLIGHT = css('#facc15')
 // Facilities include the 2 km buffer (hospitals outside the pilot matter); everything else pilot-only.
-const FULL_EXTENT = new Set(['facilities', 'boundary', 'drains', 'drain_nodes', 'outfalls', 'catchments'])
+const FULL_EXTENT = new Set(['facilities', 'boundary', 'drains', 'drain_nodes', 'outfalls', 'catchments', 'sites',
+  'substations', 'transformers', 'feeders'])
 const DRAIN_LIFT_M = 1.5 // above road polylines (avoid z-fighting)
 const EOX_URL = 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg'
 
@@ -208,6 +210,31 @@ function styleLayer(id: string, ds: GeoJsonDataSource) {
           e.polygon.height = new ConstantProperty(0.2)
         }
         break
+      case 'transformers':
+        asPoint(e, loadingColor(Number(attrs.loading_pct) || 0), attrs.kind === 'distribution' ? 16 : 20, 'T')
+        break
+      case 'substations':
+        asPoint(e, '#e66767', 28, 'S')
+        break
+      case 'feeders':
+        if (e.polyline) {
+          e.polyline.width = new ConstantProperty(2)
+          e.polyline.material = new PolylineDashMaterialProperty({ color: css(FEEDER_COLOR, 0.85), dashLength: 16 })
+          e.polyline.positions = new ConstantProperty(lift(e.polyline.positions?.getValue(NOW) ?? [], 6))
+        }
+        break
+      case 'sites': {
+        fill(e, '#a855f7', 0.28)
+        const h = e.polygon?.hierarchy?.getValue(NOW) as { positions: Cartesian3[] } | undefined
+        if (h)
+          e.polyline = new PolylineGraphics({
+            positions: [...h.positions, h.positions[0]],
+            width: 3,
+            material: new PolylineDashMaterialProperty({ color: css('#c084fc'), dashLength: 10 }),
+            clampToGround: true,
+          })
+        break
+      }
       case 'waterways':
         fill(e, '#38bdf8', 0.45)
         line(e, '#38bdf8', 2.5)
@@ -308,6 +335,14 @@ function applyScenario(index: Map<string, Entity>, L: Looks, flood: FloodResult 
       const e = index.get(id)
       if (e) next.set(e, { polyMat: solid(SCENARIO.building_exposed) })
     }
+    for (const id of Object.keys(flood.layers.buildings_power ?? {})) {
+      const e = index.get(id)
+      if (e && !flood.layers.buildings[id]) next.set(e, { polyMat: solid(SCENARIO_POWER.building_no_power, 0.95) })
+    }
+    for (const id of Object.keys(flood.layers.transformers ?? {})) {
+      const e = index.get(id)
+      if (e) next.set(e, { billColor: new ConstantProperty(css(SCENARIO_POWER.transformer_shutdown)), scale: new ConstantProperty(1.5) })
+    }
     for (const [id, f] of Object.entries(flood.layers.facilities)) {
       const e = index.get(id)
       if (e) next.set(e, { billColor: new ConstantProperty(css(f.state === 'access_cut' ? SCENARIO.facility_cut : SCENARIO.facility_impaired)),
@@ -366,8 +401,8 @@ export default function MapView() {
   const looks = useRef<Looks>({ originals: new Map(), scenario: new Map(), painted: new Map() })
   const tagRef = useRef<HTMLDivElement>(null)
   const anchorRef = useRef<Cartesian3 | null>(null)
-  const { region, visible, imagery, view, quality, selectedId, selected, neighbourhood, flyTarget, flood, select, setSelected, setLoading } =
-    useApp()
+  const { region, visible, imagery, view, quality, selectedId, selected, neighbourhood, flyTarget, flood, dev, drawing,
+    drawPoints, drawn, select, setSelected, setLoading } = useApp()
   const refreshLooks = () => {
     const st = useApp.getState()
     applyScenario(entityIndex.current, looks.current, st.flood)
@@ -432,10 +467,21 @@ export default function MapView() {
     viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
     const click = new ScreenSpaceEventHandler(viewer.scene.canvas)
     click.setInputAction((ev: { position: { x: number; y: number } }) => {
+      if (useApp.getState().drawing) {
+        const cart = viewer.camera.pickEllipsoid(ev.position as never, viewer.scene.globe.ellipsoid)
+        if (cart) {
+          const c = Cartographic.fromCartesian(cart)
+          useApp.getState().addDrawPoint([CesiumMath.toDegrees(c.longitude), CesiumMath.toDegrees(c.latitude)])
+        }
+        return
+      }
       const picked = viewer.scene.pick(ev.position as never)
       const ent = defined(picked) && picked.id instanceof Entity ? picked.id : null
       useApp.getState().select(ent ? (String(prop(ent, 'asset_id') ?? '') || null) : null)
     }, ScreenSpaceEventType.LEFT_CLICK)
+    click.setInputAction(() => {
+      if (useApp.getState().drawing) useApp.getState().finishDraw()
+    }, ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
     viewerRef.current = viewer
     const map = sources.current
     const [idx, lk] = [entityIndex.current, looks.current]
@@ -558,6 +604,39 @@ export default function MapView() {
     viewerRef.current?.scene.requestRender()
   }, [flood])
 
+  // P09 draw tool: live outline while drawing; pending footprint; assessed proposal extruded in purple (simulated).
+  useEffect(() => {
+    const viewer = viewerRef.current
+    if (!viewer) return
+    for (const id of ['draw-temp', 'proposal']) viewer.entities.removeById(id)
+    const purple = css('#a855f7')
+    if (drawing && drawPoints.length) {
+      const pos = drawPoints.map(([lon, lat]) => Cartesian3.fromDegrees(lon, lat, 1))
+      viewer.entities.add({
+        id: 'draw-temp',
+        polyline: { positions: drawPoints.length > 2 ? [...pos, pos[0]] : pos, width: 3, material: purple },
+        polygon: drawPoints.length > 2 ? { hierarchy: pos, material: purple.withAlpha(0.25), height: 0.5 } : undefined,
+      })
+    } else if (dev || drawn) {
+      const ring = dev ? dev.geometry.coordinates[0] : [...drawn!, drawn![0]]
+      const pos = ring.map(([lon, lat]) => Cartesian3.fromDegrees(lon, lat))
+      const floors = dev ? dev.params.floors : 0
+      viewer.entities.add({
+        id: 'proposal',
+        polygon: {
+          hierarchy: pos,
+          height: 0,
+          extrudedHeight: floors ? floors * 3.2 : 1,
+          material: purple.withAlpha(floors ? 0.78 : 0.35),
+          outline: true,
+          outlineColor: css('#f5d0fe'),
+        },
+        properties: { asset_id: 'proposal', data_status: 'simulated' },
+      })
+    }
+    viewer.scene.requestRender()
+  }, [drawing, drawPoints, drawn, dev])
+
   // Explorer "fly to" requests.
   useEffect(() => {
     const viewer = viewerRef.current
@@ -580,6 +659,12 @@ export default function MapView() {
       >
         {selected && selected.asset_id === selectedId && <InfoTag asset={selected} onClose={() => select(null)} />}
       </div>
+      {drawing && (
+        <div className="absolute left-1/2 top-14 -translate-x-1/2 rounded border border-purple-400/70 bg-slate-950/90 px-3 py-1.5 text-[11px] text-purple-100 shadow-lg">
+          Drawing footprint · click to add corners ({drawPoints.length}) · double-click to finish ·{' '}
+          <button className="underline" onClick={() => useApp.getState().cancelDraw()}>cancel</button>
+        </div>
+      )}
       {flood && (
         <div className="absolute bottom-10 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded border border-amber-500/60 bg-slate-950/90 px-3 py-1.5 text-[11px] text-amber-200 shadow-lg">
           <span className="font-semibold">
@@ -589,6 +674,11 @@ export default function MapView() {
           <button onClick={() => useApp.getState().setFlood(null)} className="rounded border border-amber-500/50 px-1.5 hover:bg-amber-500/20">
             Clear
           </button>
+        </div>
+      )}
+      {POWER_LAYERS.some((l) => visible[l]) && (
+        <div className="pointer-events-none absolute left-3 top-11 rounded border border-dashed border-yellow-400/70 bg-slate-950/85 px-2.5 py-1 text-[11px] font-semibold tracking-wider text-yellow-200 shadow">
+          SIMULATED NETWORK — not the actual utility grid
         </div>
       )}
       {DRAINAGE_LAYERS.some((l) => visible[l]) && (
