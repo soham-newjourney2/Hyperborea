@@ -1,0 +1,558 @@
+{
+ "source_id": "om_archive",
+ "data_status": "modelled",
+ "label": "ERA5 reanalysis via Open-Meteo (modelled, ~0.25\u00b0 grid cell) \u2014 not station observations",
+ "grid": {
+  "lat": 22.5,
+  "lon": 88.5,
+  "elevation_m": 9.0,
+  "resolution": "0.25\u00b0 (ERA5)"
+ },
+ "period": {
+  "start": "1981-01-01",
+  "end": "2026-10-31",
+  "full_years": [
+   1981,
+   2025
+  ],
+  "n_years": 45
+ },
+ "thresholds_mm_day": {
+  "heavy": 64.5,
+  "very_heavy": 115.6,
+  "extremely_heavy": 204.5,
+  "source_id": "imd_thresholds"
+ },
+ "stats": {
+  "annual_total_mean_mm": 1612.0,
+  "jjas_share_pct": 71.9,
+  "max_1day": {
+   "mm": 169.9,
+   "date": "2019-08-17"
+  },
+  "annual_max_1day_median_mm": 79.8,
+  "heavy_days_per_year_mean": 1.18
+ },
+ "trends": {
+  "annual_total": {
+   "slope_per_decade": 26.45,
+   "p_value": 0.382,
+   "unit": "mm/decade",
+   "significant_5pct": false
+  },
+  "annual_max_1day": {
+   "slope_per_decade": 1.91,
+   "p_value": 0.581,
+   "unit": "mm/decade",
+   "significant_5pct": false
+  },
+  "heavy_days": {
+   "slope_per_decade": 0.02,
+   "p_value": 0.897,
+   "unit": "days/decade",
+   "significant_5pct": false
+  }
+ },
+ "notes": [
+  "ERA5 daily totals are grid-cell averages (~25 km); they smooth local convective bursts, so station records are typically higher. Use as climate context, not as design rainfall.",
+  "Annual statistics use complete calendar years only; trends are ordinary least squares on annual values."
+ ],
+ "years": [
+  {
+   "year": 1981,
+   "total_mm": 1611.7,
+   "jjas_mm": 851.7,
+   "max_1day_mm": 76.8,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 29.95,
+   "tmin_mean_c": 21.59
+  },
+  {
+   "year": 1982,
+   "total_mm": 918.9,
+   "jjas_mm": 703.8,
+   "max_1day_mm": 39.6,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.94,
+   "tmin_mean_c": 22.23
+  },
+  {
+   "year": 1983,
+   "total_mm": 1545.8,
+   "jjas_mm": 927.3,
+   "max_1day_mm": 38.8,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.62,
+   "tmin_mean_c": 22.41
+  },
+  {
+   "year": 1984,
+   "total_mm": 1790.4,
+   "jjas_mm": 1546.5,
+   "max_1day_mm": 119.8,
+   "heavy_days": 2,
+   "very_heavy_days": 1,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.57,
+   "tmin_mean_c": 22.06
+  },
+  {
+   "year": 1985,
+   "total_mm": 1362.6,
+   "jjas_mm": 920.1,
+   "max_1day_mm": 68.6,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.78,
+   "tmin_mean_c": 22.45
+  },
+  {
+   "year": 1986,
+   "total_mm": 1714.5,
+   "jjas_mm": 1230.4,
+   "max_1day_mm": 105.4,
+   "heavy_days": 2,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.78,
+   "tmin_mean_c": 22.44
+  },
+  {
+   "year": 1987,
+   "total_mm": 1140.6,
+   "jjas_mm": 878.0,
+   "max_1day_mm": 109.5,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.22,
+   "tmin_mean_c": 22.55
+  },
+  {
+   "year": 1988,
+   "total_mm": 1838.4,
+   "jjas_mm": 1443.4,
+   "max_1day_mm": 89.3,
+   "heavy_days": 5,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.83,
+   "tmin_mean_c": 22.61
+  },
+  {
+   "year": 1989,
+   "total_mm": 1497.7,
+   "jjas_mm": 1097.8,
+   "max_1day_mm": 98.3,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.79,
+   "tmin_mean_c": 22.08
+  },
+  {
+   "year": 1990,
+   "total_mm": 2102.8,
+   "jjas_mm": 1323.9,
+   "max_1day_mm": 65.8,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 29.94,
+   "tmin_mean_c": 22.27
+  },
+  {
+   "year": 1991,
+   "total_mm": 1629.9,
+   "jjas_mm": 1247.1,
+   "max_1day_mm": 57.6,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.59,
+   "tmin_mean_c": 22.62
+  },
+  {
+   "year": 1992,
+   "total_mm": 1359.0,
+   "jjas_mm": 1025.1,
+   "max_1day_mm": 83.1,
+   "heavy_days": 2,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.69,
+   "tmin_mean_c": 22.15
+  },
+  {
+   "year": 1993,
+   "total_mm": 2068.1,
+   "jjas_mm": 1502.1,
+   "max_1day_mm": 86.3,
+   "heavy_days": 2,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.56,
+   "tmin_mean_c": 22.17
+  },
+  {
+   "year": 1994,
+   "total_mm": 1751.4,
+   "jjas_mm": 1087.3,
+   "max_1day_mm": 121.6,
+   "heavy_days": 1,
+   "very_heavy_days": 1,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.79,
+   "tmin_mean_c": 22.42
+  },
+  {
+   "year": 1995,
+   "total_mm": 1718.2,
+   "jjas_mm": 1166.5,
+   "max_1day_mm": 82.3,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.62,
+   "tmin_mean_c": 22.32
+  },
+  {
+   "year": 1996,
+   "total_mm": 1539.6,
+   "jjas_mm": 1262.9,
+   "max_1day_mm": 76.3,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.0,
+   "tmin_mean_c": 22.29
+  },
+  {
+   "year": 1997,
+   "total_mm": 1874.7,
+   "jjas_mm": 1407.6,
+   "max_1day_mm": 122.2,
+   "heavy_days": 1,
+   "very_heavy_days": 1,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.3,
+   "tmin_mean_c": 22.08
+  },
+  {
+   "year": 1998,
+   "total_mm": 1699.4,
+   "jjas_mm": 1057.1,
+   "max_1day_mm": 51.6,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.49,
+   "tmin_mean_c": 22.61
+  },
+  {
+   "year": 1999,
+   "total_mm": 1497.1,
+   "jjas_mm": 1071.4,
+   "max_1day_mm": 59.4,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.05,
+   "tmin_mean_c": 22.46
+  },
+  {
+   "year": 2000,
+   "total_mm": 1385.1,
+   "jjas_mm": 974.9,
+   "max_1day_mm": 73.8,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.67,
+   "tmin_mean_c": 22.31
+  },
+  {
+   "year": 2001,
+   "total_mm": 1752.9,
+   "jjas_mm": 1227.3,
+   "max_1day_mm": 129.8,
+   "heavy_days": 1,
+   "very_heavy_days": 1,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.53,
+   "tmin_mean_c": 22.21
+  },
+  {
+   "year": 2002,
+   "total_mm": 1697.2,
+   "jjas_mm": 1219.8,
+   "max_1day_mm": 73.9,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.96,
+   "tmin_mean_c": 22.5
+  },
+  {
+   "year": 2003,
+   "total_mm": 1441.3,
+   "jjas_mm": 1002.6,
+   "max_1day_mm": 58.3,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.78,
+   "tmin_mean_c": 22.54
+  },
+  {
+   "year": 2004,
+   "total_mm": 1447.7,
+   "jjas_mm": 1136.4,
+   "max_1day_mm": 42.9,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.02,
+   "tmin_mean_c": 22.6
+  },
+  {
+   "year": 2005,
+   "total_mm": 1593.1,
+   "jjas_mm": 958.3,
+   "max_1day_mm": 80.8,
+   "heavy_days": 2,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.09,
+   "tmin_mean_c": 22.92
+  },
+  {
+   "year": 2006,
+   "total_mm": 1487.2,
+   "jjas_mm": 1093.9,
+   "max_1day_mm": 111.3,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.33,
+   "tmin_mean_c": 22.74
+  },
+  {
+   "year": 2007,
+   "total_mm": 1936.2,
+   "jjas_mm": 1480.8,
+   "max_1day_mm": 128.8,
+   "heavy_days": 2,
+   "very_heavy_days": 1,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.77,
+   "tmin_mean_c": 22.51
+  },
+  {
+   "year": 2008,
+   "total_mm": 1776.4,
+   "jjas_mm": 1351.5,
+   "max_1day_mm": 66.0,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.59,
+   "tmin_mean_c": 22.54
+  },
+  {
+   "year": 2009,
+   "total_mm": 1256.8,
+   "jjas_mm": 934.1,
+   "max_1day_mm": 66.9,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.86,
+   "tmin_mean_c": 23.02
+  },
+  {
+   "year": 2010,
+   "total_mm": 1195.9,
+   "jjas_mm": 898.6,
+   "max_1day_mm": 47.2,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.71,
+   "tmin_mean_c": 23.33
+  },
+  {
+   "year": 2011,
+   "total_mm": 1911.4,
+   "jjas_mm": 1707.7,
+   "max_1day_mm": 129.2,
+   "heavy_days": 4,
+   "very_heavy_days": 2,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.0,
+   "tmin_mean_c": 22.46
+  },
+  {
+   "year": 2012,
+   "total_mm": 1243.0,
+   "jjas_mm": 859.9,
+   "max_1day_mm": 37.8,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.26,
+   "tmin_mean_c": 22.58
+  },
+  {
+   "year": 2013,
+   "total_mm": 1560.3,
+   "jjas_mm": 1072.8,
+   "max_1day_mm": 97.3,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.08,
+   "tmin_mean_c": 22.27
+  },
+  {
+   "year": 2014,
+   "total_mm": 1364.6,
+   "jjas_mm": 1160.6,
+   "max_1day_mm": 81.4,
+   "heavy_days": 2,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.66,
+   "tmin_mean_c": 22.46
+  },
+  {
+   "year": 2015,
+   "total_mm": 1840.1,
+   "jjas_mm": 1484.3,
+   "max_1day_mm": 79.8,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.35,
+   "tmin_mean_c": 23.07
+  },
+  {
+   "year": 2016,
+   "total_mm": 1657.0,
+   "jjas_mm": 1150.6,
+   "max_1day_mm": 89.3,
+   "heavy_days": 3,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.69,
+   "tmin_mean_c": 23.41
+  },
+  {
+   "year": 2017,
+   "total_mm": 1905.2,
+   "jjas_mm": 1363.8,
+   "max_1day_mm": 79.1,
+   "heavy_days": 2,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.34,
+   "tmin_mean_c": 23.02
+  },
+  {
+   "year": 2018,
+   "total_mm": 1586.3,
+   "jjas_mm": 1133.7,
+   "max_1day_mm": 48.1,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.49,
+   "tmin_mean_c": 22.58
+  },
+  {
+   "year": 2019,
+   "total_mm": 1744.8,
+   "jjas_mm": 1125.3,
+   "max_1day_mm": 169.9,
+   "heavy_days": 2,
+   "very_heavy_days": 1,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.33,
+   "tmin_mean_c": 22.97
+  },
+  {
+   "year": 2020,
+   "total_mm": 1747.8,
+   "jjas_mm": 1084.2,
+   "max_1day_mm": 67.7,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 30.94,
+   "tmin_mean_c": 22.73
+  },
+  {
+   "year": 2021,
+   "total_mm": 1883.2,
+   "jjas_mm": 1365.6,
+   "max_1day_mm": 64.8,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.4,
+   "tmin_mean_c": 23.16
+  },
+  {
+   "year": 2022,
+   "total_mm": 1259.4,
+   "jjas_mm": 848.0,
+   "max_1day_mm": 116.9,
+   "heavy_days": 1,
+   "very_heavy_days": 1,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.2,
+   "tmin_mean_c": 23.01
+  },
+  {
+   "year": 2023,
+   "total_mm": 1403.5,
+   "jjas_mm": 996.8,
+   "max_1day_mm": 50.6,
+   "heavy_days": 0,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.9,
+   "tmin_mean_c": 23.4
+  },
+  {
+   "year": 2024,
+   "total_mm": 1832.2,
+   "jjas_mm": 1214.2,
+   "max_1day_mm": 115.5,
+   "heavy_days": 1,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.39,
+   "tmin_mean_c": 23.55
+  },
+  {
+   "year": 2025,
+   "total_mm": 1969.0,
+   "jjas_mm": 1535.4,
+   "max_1day_mm": 86.9,
+   "heavy_days": 2,
+   "very_heavy_days": 0,
+   "extremely_heavy_days": 0,
+   "tmax_mean_c": 31.14,
+   "tmin_mean_c": 23.03
+  }
+ ],
+ "generated_at": "2026-11-06T11:16:14+00:00"
+}
