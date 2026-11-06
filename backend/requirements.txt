@@ -1,0 +1,15 @@
+# API runtime (installed in .venv and in the HF Space image)
+fastapi
+uvicorn[standard]
+pydantic-settings
+geopandas
+pyogrio
+shapely
+pyproj
+networkx
+httpx
+scikit-learn
+joblib
+pyjwt
+pyyaml
+pytest

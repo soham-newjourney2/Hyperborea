@@ -1,0 +1,62 @@
+# ---- local-only: Claude Code config + workflow (kept on this machine, never pushed) ----
+CLAUDE.md
+.claude/
+.mcp.json
+planning.md
+phases/
+docs/LOG.md
+
+# ---- secrets ----
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# ---- local downloads, caches, models, tools (D-05) ----
+local/
+.venv/
+venv/
+node_modules/
+frontend/dist/
+.vercel/
+deploy/
+*.tsbuildinfo
+
+# ---- python ----
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+*.egg-info/
+
+# ---- data: keep small processed vectors/JSON (< 5 MB each), ignore raw dumps and rasters ----
+data/raw/**
+!data/raw/.gitkeep
+*.tif
+*.tiff
+*.nc
+*.zarr/
+*.osm
+*.osm.pbf
+*.graphml
+*.gguf
+*.pt
+*.pth
+*.safetensors
+*.onnx
+
+# ---- logs / os / editor ----
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/settings.json
