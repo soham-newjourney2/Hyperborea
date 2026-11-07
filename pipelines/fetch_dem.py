@@ -12,15 +12,16 @@ import xarray as xr
 from rioxarray.merge import merge_arrays
 
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
 BUFFER_M = 2000
-OUT = ROOT / "local" / "rasters" / "dem.tif"
+OUT = R.local_dir("rasters") / "dem.tif"
 
 
 def main() -> None:
-    bnd = gpd.read_file(ROOT / "data" / "curated" / "boundary.geojson")
-    area = bnd.to_crs(32645).buffer(BUFFER_M).to_crs(4326)
+    bnd = gpd.read_file(R.data_dir("curated") / "boundary.geojson")
+    area = bnd.to_crs(R.metric_crs()).buffer(BUFFER_M).to_crs(4326)
     w, s, e, n = area.total_bounds
     cat = pystac_client.Client.open(STAC, modifier=planetary_computer.sign_inplace)
     items = list(cat.search(collections=["cop-dem-glo-30"], bbox=[w, s, e, n]).items())

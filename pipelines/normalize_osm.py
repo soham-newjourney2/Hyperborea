@@ -18,11 +18,12 @@ from shapely import make_valid
 from shapely.geometry.base import BaseGeometry
 
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
-UTM = 32645
+UTM = R.metric_crs()
 FLOOR_M = 3.2
 DEFAULT_HEIGHT_M = 9.0
-GPKG = ROOT / "data" / "processed" / "hyperborea.gpkg"
+GPKG = R.data_dir("processed") / "hyperborea.gpkg"
 PREFIX = {"node": "n", "way": "w", "relation": "r"}
 POLY = ("Polygon", "MultiPolygon")
 NUM = re.compile(r"\d+(?:\.\d+)?")
@@ -150,10 +151,10 @@ def tagged(raw: gpd.GeoDataFrame, prefix: str, key: str, keep: list[str], fallba
 
 
 def main(raw_dir: str | None = None) -> None:
-    raw = Path(raw_dir) if raw_dir else max(p.parent for p in (ROOT / "data" / "raw" / "osm").glob("*/meta.json"))
+    raw = Path(raw_dir) if raw_dir else max(p.parent for p in (R.data_dir("raw") / "osm").glob("*/meta.json"))
     meta = json.loads((raw / "meta.json").read_text(encoding="utf-8"))
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    bnd = gpd.read_file(ROOT / "data" / "curated" / "boundary.geojson")
+    bnd = gpd.read_file(R.data_dir("curated") / "boundary.geojson")
     poly = bnd.geometry.iloc[0]
     read = lambda n: gpd.read_file(raw / f"{n}.gpkg", layer=n)  # noqa: E731
 

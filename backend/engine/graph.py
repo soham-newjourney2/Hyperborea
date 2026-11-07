@@ -1,6 +1,6 @@
 """P07 relationship engine: one typed, explainable dependency graph across asset types.
 
-`build_graph(layers)` takes {layer_id: GeoDataFrame} (EPSG:4326, shared schema §6) so it is testable without the
+`build_graph(layers)` takes {layer_id: GeoDataFrame} (EPSG:4326, shared schema Â§6) so it is testable without the
 GeoPackage. Every edge carries relationship_id, type, rule, weight, unit, data_status, confidence, assumptions.
 """
 from __future__ import annotations
@@ -12,8 +12,8 @@ import geopandas as gpd
 import networkx as nx
 
 from .relationships import EDGE_TYPES, LAYER_KIND
+from ..app.core.regions import metric_crs as utm  # P16: active region's UTM zone (Sector V = 32645)
 
-UTM = 32645
 ACCESS_MAX_M = 50.0
 DEPENDS_K = 3
 
@@ -43,7 +43,7 @@ def build_graph(layers: dict[str, gpd.GeoDataFrame]) -> nx.MultiDiGraph:
         g = layers.get(name)
         if g is None or g.empty:
             continue
-        pts = g.to_crs(UTM).representative_point().to_crs(4326)
+        pts = g.to_crs(utm()).representative_point().to_crs(4326)
         for aid, atype, nm, ds, src, p in zip(g.asset_id, g.asset_type, g["name"], g.data_status, g.source_id, pts):
             G.add_node(aid, kind=kind, layer=name, asset_type=atype, name=nm if isinstance(nm, str) else None,
                        data_status=ds, source_id=src, lon=round(p.x, 6), lat=round(p.y, 6))
@@ -51,26 +51,26 @@ def build_graph(layers: dict[str, gpd.GeoDataFrame]) -> nx.MultiDiGraph:
     drains, roads = layers.get("drains"), layers.get("roads")
     if drains is not None and not drains.empty:
         for aid, a in zip(drains.asset_id, _attrs(drains)):
-            add_edge(G, "DRAINS_TO", aid, a.get("drains_to"), weight=a.get("effective_capacity_m3s"), unit="m³/s",
+            add_edge(G, "DRAINS_TO", aid, a.get("drains_to"), weight=a.get("effective_capacity_m3s"), unit="mÂ³/s",
                      rule="P06 routing: flows to the next drain/outfall on the elevation-penalised shortest path "
                           "to an outfall", data_status="simulated", confidence="low",
                      assumptions="simulated network topology (D-09)")
             add_edge(G, "ADJACENT_TO", aid, a.get("road_id"), weight=a.get("length_m"), unit="m",
                      rule="drain generated along this road edge (one side drain per road edge)",
                      data_status="simulated", confidence="low", assumptions="side drains follow roads (P06)")
-            add_edge(G, "LOCATED_WITHIN", aid, a.get("catchment_id"), weight=a.get("catchment_m2"), unit="m²",
+            add_edge(G, "LOCATED_WITHIN", aid, a.get("catchment_id"), weight=a.get("catchment_m2"), unit="mÂ²",
                      rule="this drain's midpoint generates the Voronoi catchment it collects from",
                      data_status="simulated", confidence="low")
 
     # Nearest-road access for buildings + facilities (UTM metres).
     if roads is not None and not roads.empty:
-        r = roads[["asset_id", "geometry"]].to_crs(UTM).rename(columns={"asset_id": "road_id"})
+        r = roads[["asset_id", "geometry"]].to_crs(utm()).rename(columns={"asset_id": "road_id"})
         for name in ("buildings", "facilities"):
             g = layers.get(name)
             if g is None or g.empty:
                 continue
-            pts = gpd.GeoDataFrame({"asset_id": g.asset_id.values}, geometry=g.to_crs(UTM).representative_point().values,
-                                   crs=UTM)
+            pts = gpd.GeoDataFrame({"asset_id": g.asset_id.values}, geometry=g.to_crs(utm()).representative_point().values,
+                                   crs=utm())
             near = gpd.sjoin_nearest(pts, r, max_distance=ACCESS_MAX_M, distance_col="d", how="inner")
             near = near.sort_values("d").drop_duplicates("asset_id")
             for aid, rid, d in zip(near.asset_id, near.road_id, near.d):
@@ -89,7 +89,7 @@ def build_graph(layers: dict[str, gpd.GeoDataFrame]) -> nx.MultiDiGraph:
                                  data_status="modelled", confidence=_access_conf(d),
                                  assumptions="facility unusable if all its access roads are impassable")
 
-    # Electrical supply (P10, simulated): substation → transformer → building / facility; facility DEPENDS_ON transformer.
+    # Electrical supply (P10, simulated): substation â†’ transformer â†’ building / facility; facility DEPENDS_ON transformer.
     subs, trf = layers.get("substations"), layers.get("transformers")
     if subs is not None and not subs.empty:
         for aid, a in zip(subs.asset_id, _attrs(subs)):
@@ -113,13 +113,13 @@ def build_graph(layers: dict[str, gpd.GeoDataFrame]) -> nx.MultiDiGraph:
     # Containment in catchments (buildings, manholes).
     cats = layers.get("catchments")
     if cats is not None and not cats.empty:
-        c = cats[["asset_id", "geometry"]].to_crs(UTM).rename(columns={"asset_id": "catchment_id"})
+        c = cats[["asset_id", "geometry"]].to_crs(utm()).rename(columns={"asset_id": "catchment_id"})
         for name in ("buildings", "drain_nodes", "transformers"):
             g = layers.get(name)
             if g is None or g.empty:
                 continue
-            pts = gpd.GeoDataFrame({"asset_id": g.asset_id.values}, geometry=g.to_crs(UTM).representative_point().values,
-                                   crs=UTM)
+            pts = gpd.GeoDataFrame({"asset_id": g.asset_id.values}, geometry=g.to_crs(utm()).representative_point().values,
+                                   crs=utm())
             hit = gpd.sjoin(pts, c, predicate="within").drop_duplicates("asset_id")
             for aid, cid in zip(hit.asset_id, hit.catchment_id):
                 add_edge(G, "LOCATED_WITHIN", aid, cid, rule="point inside the simulated catchment polygon",
@@ -205,7 +205,7 @@ def relationships_of(G: nx.MultiDiGraph, nid: str) -> list[dict]:
             out.append({**d, "direction": direction, "other_id": other, "other_kind": o.get("kind"),
                         "other_type": o.get("asset_type"), "other_name": o.get("name"),
                         "label": EDGE_TYPES[d["type"]]["label"] if direction == "out" else
-                        f"← {EDGE_TYPES[d['type']]['label']}"})
+                        f"â† {EDGE_TYPES[d['type']]['label']}"})
     return out
 
 

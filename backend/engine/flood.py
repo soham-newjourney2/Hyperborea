@@ -18,8 +18,8 @@ import networkx as nx
 
 from .hydraulics import rational_runoff
 from .rules import flood_rules, risk_rules
+from ..app.core.regions import metric_crs as utm  # P16: active region's UTM zone (Sector V = 32645)
 
-UTM = 32645
 LABEL = "Scenario-based estimate — not a prediction"
 DATA_STATUS = "modelled (simulated inputs)"
 
@@ -71,8 +71,8 @@ def build_context(layers: dict[str, gpd.GeoDataFrame], G: nx.MultiDiGraph) -> Fl
         if v["road_id"] in road_cats and v["catchment_id"] in cat:
             road_cats[v["road_id"]].add(v["catchment_id"])
     mids = gpd.GeoDataFrame({"rid": rd.asset_id.values},
-                            geometry=rd.to_crs(UTM).geometry.interpolate(0.5, normalized=True).values, crs=UTM)
-    hit = gpd.sjoin(mids, ct[["asset_id", "geometry"]].to_crs(UTM), predicate="within")
+                            geometry=rd.to_crs(utm()).geometry.interpolate(0.5, normalized=True).values, crs=utm())
+    hit = gpd.sjoin(mids, ct[["asset_id", "geometry"]].to_crs(utm()), predicate="within")
     for rid, cid in zip(hit.rid, hit.asset_id):
         road_cats[rid].add(cid)
 

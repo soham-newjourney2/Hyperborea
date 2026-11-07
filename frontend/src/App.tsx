@@ -3,6 +3,7 @@ import AssetInspector from './components/AssetInspector'
 import LayerManager from './components/LayerManager'
 import Legend from './components/Legend'
 import Login from './components/Login'
+import RegionSwitcher from './components/RegionSwitcher'
 import MapView from './components/MapView'
 import { AUTH_EVENT, clearSession, currentToken } from './lib/auth'
 import { getHealth, getLayers, getRegion, getWeatherForecast, runFlood, type Health } from './lib/api'
@@ -179,10 +180,11 @@ export default function App() {
         <div className="flex items-baseline gap-3">
           <h1 className="text-lg font-semibold tracking-[0.3em] text-sky-300">HYPERBOREA</h1>
           <span className="text-xs text-slate-500">
-            Urban intelligence · {region ? `${region.name} · ${String(region.attrs.area_km2 ?? '')} km²` : 'Salt Lake pilot'}
+            Urban intelligence · {region ? `${region.name} · ${String(region.attrs.area_km2 ?? '')} km²` : 'pilot'}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <RegionSwitcher />
           <ApiBadge state={api} />
           {authed && (
             <button onClick={() => { clearSession(); setAuthed(false) }} className="text-[11px] text-slate-500 hover:text-slate-200">

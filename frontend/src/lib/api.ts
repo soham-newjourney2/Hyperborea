@@ -1,15 +1,18 @@
 import { AUTH_EVENT, AuthError, currentToken } from './auth'
+import { isDefaultRegion, REGION, withRegion } from './region'
 
 // API client. Base URL from VITE_API_URL (planning §8).
 // Offline fallback (P04): any request that fails or takes > 5 s is served from public/snapshots/*.json
 // (made by scripts/make_snapshots.py) and the app shows an "Offline snapshot" badge.
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000/api'
-const SNAPSHOT_BASE = `${import.meta.env.BASE_URL ?? '/'}snapshots/`
+const SNAPSHOT_ROOT = `${import.meta.env.BASE_URL ?? '/'}snapshots/`
+// P16: non-default regions keep their snapshots in snapshots/regions/<id>/ (scripts/make_snapshots.py)
+const SNAPSHOT_BASE = isDefaultRegion() ? SNAPSHOT_ROOT : `${SNAPSHOT_ROOT}regions/${REGION}/`
 const TIMEOUT_MS = 5000
 const LAYER_TIMEOUT_MS = 20000 // big GeoJSON from a cold-started Space can legitimately take > 5 s
 
 export function apiUrl(path: string, base: string = API_URL): string {
-  return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
+  return withRegion(`${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`) // P16: ?region= on every call
 }
 
 const SNAPSHOT_PATHS = new Set(['weather/current', 'weather/forecast', 'climate/summary', 'scenarios/presets',
@@ -18,7 +21,7 @@ const SNAPSHOT_PATHS = new Set(['weather/current', 'weather/forecast', 'climate/
 /** API path → snapshot file name (must match scripts/make_snapshots.py); null = not snapshotted. */
 export function snapshotName(path: string): string | null {
   const [p, q = ''] = path.replace(/^\/+/, '').split('?')
-  if (p === 'health' || p === 'region' || p === 'layers') return `${p}.json`
+  if (p === 'health' || p === 'region' || p === 'layers' || p === 'regions') return `${p}.json`
   if (SNAPSHOT_PATHS.has(p)) return `${p.replace('/', '_')}.json`
   const m = /^layers\/([^/]+)$/.exec(p)
   if (m) return `layer_${decodeURIComponent(m[1])}${/(^|&)in_pilot=true(&|$)/.test(q) ? '_pilot' : ''}.json`
@@ -68,7 +71,7 @@ async function getJson<T>(path: string, signal?: AbortSignal, timeoutMs = TIMEOU
     if (signal?.aborted || err instanceof AuthError) throw err // cancelled or not logged in — not an outage
     const name = snapshotName(path)
     if (!name) throw err
-    const r = await fetch(SNAPSHOT_BASE + name, { signal })
+    const r = await fetch((name === 'regions.json' ? SNAPSHOT_ROOT : SNAPSHOT_BASE) + name, { signal })
     // Missing snapshot: dev servers / SPA hosts answer with index.html — treat as "no snapshot".
     if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) throw err
     return (await r.json()) as T
@@ -681,3 +684,19 @@ export async function login(password: string): Promise<LoginResponse> {
   if (!r.ok) throw new Error(r.status === 401 ? 'Wrong password' : `Login failed (${r.status})`)
   return (await r.json()) as LoginResponse
 }
+
+// P16 multi-region registry (GET /regions; offline: snapshots/regions.json)
+export interface RegionInfo {
+  id: string
+  name: string
+  city: string
+  admin: string
+  country: string
+  timezone: string
+  aq_index: string
+  story: string
+  default: boolean
+  status: 'ready' | 'no-data'
+}
+export const getRegions = (signal?: AbortSignal) =>
+  getJson<{ default: string; regions: RegionInfo[] }>('regions', signal)

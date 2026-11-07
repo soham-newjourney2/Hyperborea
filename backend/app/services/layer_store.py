@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 from collections import Counter
 from dataclasses import dataclass, field
-from functools import lru_cache
 from pathlib import Path
 
 import geopandas as gpd
@@ -12,7 +11,7 @@ import numpy as np
 import pyogrio
 import shapely
 
-from ..core.paths import GPKG
+from ..core.regions import data_dir, per_region
 
 # id → (title, group, default visible). Order = Layer Manager order.
 LAYER_META: dict[str, tuple[str, str, bool]] = {
@@ -71,17 +70,17 @@ class LayerStore:
     index: dict[str, tuple[str, int]] = field(default_factory=dict)
 
     @classmethod
-    def load(cls, path: Path = GPKG) -> LayerStore:
+    def load(cls, path: Path | None = None) -> LayerStore:
         """Base GPKG first, then every other domain GPKG next to it (drainage.gpkg, …; one per domain, < 5 MB)."""
+        path = path or data_dir() / "hyperborea.gpkg"  # P16: active region's folder
         store = cls(path)
         if not path.exists():
             return store
         files = [path] + sorted(p for p in path.parent.glob("*.gpkg") if p != path)
         found = [(n, f) for f in files for n, _ in pyogrio.list_layers(f)]
-        data = path.parents[1]
-        extra = [("sites", [data / "curated" / "sites.geojson"]),  # P09 curated candidate sites
+        extra = [("sites", [data_dir("curated") / "sites.geojson"]),  # P09 curated candidate sites
                  # P11: curated measurements win over the demo file when they exist
-                 ("water_quality", [data / "curated" / "water_quality.geojson", data / "synthetic" / "water_quality.geojson"])]
+                 ("water_quality", [data_dir("curated") / "water_quality.geojson", data_dir("synthetic") / "water_quality.geojson"])]
         for name, candidates in extra:
             src = next((c for c in candidates if c.exists()), None)
             if src:
@@ -91,6 +90,8 @@ class LayerStore:
             if name in store.layers:
                 raise ValueError(f"layer {name!r} defined in two GeoPackages")
             gdf = gpd.read_file(f) if f.suffix == ".geojson" else gpd.read_file(f, layer=name)
+            if gdf.empty or "asset_id" not in gdf.columns:  # an empty extra file must not break the store
+                continue
             if f.suffix == ".geojson":  # GDAL parses JSON-looking strings into dicts; keep the GPKG convention (text)
                 gdf["attrs"] = gdf["attrs"].map(lambda a: a if isinstance(a, str) else json.dumps(a))
                 for col in gdf.columns:  # …and ISO strings into Timestamps
@@ -127,6 +128,6 @@ class LayerStore:
         return {"layer": layer, **props, "position": [round(c.x, 6), round(c.y, 6)], "relationships": []}
 
 
-@lru_cache
+@per_region
 def get_store() -> LayerStore:
     return LayerStore.load()

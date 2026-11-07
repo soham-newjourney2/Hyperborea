@@ -1,10 +1,9 @@
 """P11 endpoints: /environment/air, /environment/water, /environment/landcover (planning §8)."""
 import json
-from functools import lru_cache
 
 from fastapi import APIRouter, HTTPException
 
-from ..core.paths import PROCESSED
+from ..core.regions import data_dir, per_region
 from ..services.air import AirUnavailable, get_air
 from ..services.layer_store import get_store
 
@@ -36,9 +35,9 @@ def environment_water() -> dict:
             "note": "Sampling points only — values are never interpolated between points", "points": gj}
 
 
-@lru_cache
+@per_region
 def landcover_stats() -> dict | None:
-    p = PROCESSED / "landcover_stats.json"
+    p = data_dir() / "landcover_stats.json"
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 

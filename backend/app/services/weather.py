@@ -10,6 +10,7 @@ from pathlib import Path
 import httpx
 
 from ..core.paths import LOCAL, SNAPSHOTS
+from ..core.regions import cfg, data_dir, local_dir
 
 URL = "https://api.open-meteo.com/v1/forecast"
 CURRENT = "temperature_2m,relative_humidity_2m,precipitation,rain,wind_speed_10m,weather_code"
@@ -32,7 +33,7 @@ class WeatherUnavailable(RuntimeError):
 
 def fetch_live(lat: float, lon: float) -> dict:
     params = {"latitude": lat, "longitude": lon, "current": CURRENT, "hourly": HOURLY, "forecast_hours": 72,
-              "timezone": "Asia/Kolkata"}
+              "timezone": cfg()["timezone"]}
     r = httpx.get(URL, params=params, timeout=5, headers={"User-Agent": "Hyperborea/0.1"})
     r.raise_for_status()
     return r.json()
@@ -62,7 +63,9 @@ def _wrap(entry: dict, *, stale: bool, origin: str, reason: str | None = None) -
 
 
 def get_weather(lat: float, lon: float, fetch: Callable[[float, float], dict] = fetch_live,
-                cache: Path = CACHE, snapshot: Path = SNAPSHOT) -> dict:
+                cache: Path | None = None, snapshot: Path | None = None) -> dict:
+    cache = cache or local_dir("cache") / CACHE.name  # P16: one cache + snapshot per region
+    snapshot = snapshot or data_dir("snapshots") / SNAPSHOT.name
     cached = _read(cache)
     if cached and time.time() - cached.get("fetched_ts", 0) < TTL_S:
         return _wrap(cached, stale=False, origin="cache")

@@ -20,11 +20,12 @@ from shapely.geometry import LineString, MultiPoint, Point
 
 from backend.engine.hydraulics import MANNING_N, MIN_SLOPE, PIPE_SIZES_M, manning_full_circular
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
-UTM = 32645
-GPKG = ROOT / "data" / "processed" / "hyperborea.gpkg"   # base layers (read)
-OUT = ROOT / "data" / "processed" / "drainage.gpkg"     # drainage layers (written; one GPKG per domain, < 5 MB)
-DEM = ROOT / "local" / "rasters" / "dem.tif"
+UTM = R.metric_crs()
+GPKG = R.data_dir("processed") / "hyperborea.gpkg"   # base layers (read)
+OUT = R.data_dir("processed") / "drainage.gpkg"     # drainage layers (written; one GPKG per domain, < 5 MB)
+DEM = R.local_dir("rasters") / "dem.tif"
 NO_INDEX = {"SPATIAL_INDEX": "NO"}
 
 UPHILL_PENALTY_M = 200.0     # extra routing cost per metre climbed (water prefers downhill)
@@ -36,11 +37,12 @@ RECEIVING = {"canal", "drain", "river", "stream", "ditch"}
 FALLBACK_WATER = {"water", "wetland"}  # ponds/wetlands: receiving water only for fragments with no canal (user, P06)
 DIAMETER_M = {"trunk": 1.2, "primary": 1.2, "secondary": 1.2, "tertiary": 0.9}  # minimum by road class, else 0.6
 # D-20: size each drain for a design storm on everything upstream (rational method), standard pipe sizes.
-DESIGN_RAIN_MM_H = 20.0   # assumed design intensity (Salt Lake design standard unknown; KMC legacy ~6 mm/h)
+DESIGN_RAIN_MM_H = float(R.cfg()["design_storm_mm_h"])  # assumed design intensity (D-20; Sector V 20 mm/h, local standard unknown)
+PLACE = "Salt Lake" if R.current() == R.DEFAULT else R.cfg()["name"]
 ROAD_HALF_WIDTH_M = {"trunk": 7.0, "primary": 7.0, "secondary": 5.5, "tertiary": 4.0}  # else 3.0
 RUNOFF_C = {"roof": 0.90, "road": 0.85, "other": 0.40}
 
-A_DRAIN = ("Simulated side drain along the road (Salt Lake side drains follow roads — assumption); "
+A_DRAIN = (f"Simulated side drain along the road ({PLACE} side drains follow roads — assumption); "
            f"diameter = smallest standard pipe carrying the design flow ({DESIGN_RAIN_MM_H:.0f} mm/h on upstream C·A, "
            "rational method), never below the road-class minimum (1.2 / 0.9 / 0.6 m), max 2.4 m; "
            f"Manning full flow n={MANNING_N}; slope = max(DEM slope, {MIN_SLOPE}); condition factor simulated "
@@ -85,7 +87,7 @@ def clean_json(o):
 
 
 def newest_raw_graph():
-    raw = max(p.parent for p in (ROOT / "data" / "raw" / "osm").glob("*/meta.json"))
+    raw = max(p.parent for p in (R.data_dir("raw") / "osm").glob("*/meta.json"))
     return ox.load_graphml(raw / "drive.graphml")
 
 

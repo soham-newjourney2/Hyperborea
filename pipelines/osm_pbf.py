@@ -14,9 +14,11 @@ import osmium
 from osmium.filter import KeyFilter
 from osmnx import _overpass
 
+from backend.app.core import regions as R
 from pipelines.osm_common import ROOT
 
-PBF_URL = "https://download.geofabrik.de/asia/india/eastern-zone-261104.osm.pbf"  # Geofabrik, 2026-11-05
+# P16: per-region Geofabrik extract (config/regions.yaml `osm_pbf`); Sector V = eastern-zone 2026-11-05
+PBF_URL = R.cfg().get("osm_pbf", "https://download.geofabrik.de/asia/india/eastern-zone-261104.osm.pbf")
 PBF_DIR = ROOT / "local" / "osm"
 KEYS = ("building", "highway", "amenity", "railway", "station", "power", "waterway", "natural", "landuse",
         "public_transport", "subway")
@@ -102,3 +104,11 @@ def clip(pbf: Path, bbox: tuple[float, float, float, float], out_dir: Path) -> d
             wr.close()  # back-references (way nodes, relation members) are resolved here
     print(f"  clipped: {len(keep_rels)} relations; files {[p.name for p in paths.values()]}", flush=True)
     return paths
+
+
+def data_timestamp(pbf: Path) -> str | None:
+    """Replication timestamp written by Geofabrik into the pbf header (= OSM data as of)."""
+    try:
+        return osmium.io.Reader(str(pbf), osmium.osm.osm_entity_bits.NOTHING).header().get("osmosis_replication_timestamp") or None
+    except Exception:  # noqa: BLE001
+        return None

@@ -1,0 +1,66 @@
+# P16 pilot regions (D-22). `sector_v` keeps its data in data/processed/ (default region);
+# every other region lives in data/<kind>/regions/<id>/ and is built with HYPERBOREA_REGION=<id>.
+# bbox = curated ~3 km² study rectangle [lon_min, lat_min, lon_max, lat_max] (EPSG:4326), used when no
+# official neighbourhood polygon exists. metric_crs = UTM zone of the centre (distances / areas).
+default: sector_v
+regions:
+  - id: sector_v
+    name: Salt Lake Sector V
+    city: Kolkata
+    admin: West Bengal
+    country: India
+    timezone: Asia/Kolkata
+    metric_crs: 32645          # UTM 45N
+    aq_index: naqi             # CPCB National AQI
+    design_storm_mm_h: 20      # D-20 (assumed)
+    osm_pbf: https://download.geofabrik.de/asia/india/eastern-zone-261104.osm.pbf
+    story: IT/commercial hub on reclaimed East Kolkata wetland edge
+  - id: chennai_velachery
+    name: Velachery
+    city: Chennai
+    admin: Tamil Nadu
+    country: India
+    bbox: [80.210, 12.971, 80.226, 12.987]
+    timezone: Asia/Kolkata
+    metric_crs: 32644          # UTM 44N
+    aq_index: naqi
+    design_storm_mm_h: 20
+    osm_pbf: https://download.geofabrik.de/asia/india/southern-zone-261105.osm.pbf
+    # NE monsoon (Oct–Dec) is cloudy on the Coromandel coast → later windows for Sentinel-2
+    water_seasons: {dry: 2026-03-01/2026-05-31, post_monsoon: 2025-12-20/2026-02-28}
+    story: Low-lying lake basin beside the MRTS; flooded in Dec 2015 and Dec 2023 (Cyclone Michaung)
+  - id: pune_kharadi
+    name: Kharadi
+    city: Pune
+    admin: Maharashtra
+    country: India
+    bbox: [73.937, 18.544, 73.954, 18.560]
+    timezone: Asia/Kolkata
+    metric_crs: 32643          # UTM 43N
+    aq_index: naqi
+    design_storm_mm_h: 20
+    osm_pbf: https://download.geofabrik.de/asia/india/western-zone-261105.osm.pbf
+    story: IT corridor (EON IT Park, WTC) on the Mula-Mutha riverside
+  - id: london_stratford
+    name: Hackney Wick & Stratford
+    city: London
+    admin: England
+    country: United Kingdom
+    bbox: [-0.030, 51.538, -0.005, 51.553]
+    timezone: Europe/London
+    metric_crs: 32630          # UTM 30N
+    aq_index: daqi             # Defra Daily AQI (P18)
+    design_storm_mm_h: 30      # assumed (UK surface-water sewer practice) — P18 documents it
+    osm_pbf: https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf
+    story: Olympic Park and Lea valley; flash surface-water floods on 12 and 25 July 2021
+  - id: sydney_green_square
+    name: Green Square & Alexandria
+    city: Sydney
+    admin: New South Wales
+    country: Australia
+    bbox: [151.190, -33.916, 151.209, -33.900]
+    timezone: Australia/Sydney
+    metric_crs: 32756          # UTM 56S
+    aq_index: nsw_aqc          # NSW Air Quality Categories (P19)
+    design_storm_mm_h: 40      # assumed (minor-system design) — P19 documents it
+    story: Urban renewal on the former Sheas Creek wetland; mapped overland-flow flood area

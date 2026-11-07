@@ -74,7 +74,7 @@ def compute(ctx: AccessContext, removed: set[str] | None = None, slowed: set[str
     R = H.reverse(copy=False)
     out = {}
     for cat in CATEGORIES:
-        src = _sources(ctx, cat)
+        src = {n: f for n, f in _sources(ctx, cat).items() if n in R}  # a facility snapped to an edgeless node can't route
         dist, paths = nx.multi_source_dijkstra(R, set(src), weight="tt") if src else ({}, {})
         node_min = {n: (dist[n] / 60, src[paths[n][0]]) for n in dist}
         out[cat] = {"buildings": {b: {"min": round(node_min[n][0], 2) if n in node_min else None,

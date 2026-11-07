@@ -6,16 +6,24 @@ scikit-learn only — no torch in the backend runtime.
 from __future__ import annotations
 
 import json
-from functools import lru_cache
 
 import joblib
 import numpy as np
 
-from ..app.core.paths import ROOT
+from ..app.core.regions import model_dir, per_region
 from .flood import FloodContext
 
-MODEL = ROOT / "models" / "surrogate.joblib"
-METRICS = ROOT / "models" / "surrogate_metrics.json"
+# Region of this process at import (pipelines: HYPERBOREA_REGION); the API resolves per request below.
+MODEL = model_dir() / "surrogate.joblib"
+METRICS = model_dir() / "surrogate_metrics.json"
+
+
+def model_path():
+    return model_dir() / "surrogate.joblib"
+
+
+def metrics_path():
+    return model_dir() / "surrogate_metrics.json"
 LABEL = "Surrogate of the rule engine, trained on simulated runs — not validated on real events"
 FEATURES = [
     "rain_mm_h", "duration_h", "condition_scale",            # scenario
@@ -45,16 +53,16 @@ def features(static: np.ndarray, rain: float, dur: float, scale: float) -> np.nd
     return np.column_stack([scen, static, demand / np.maximum(cap_eff, 1e-9)]).astype(np.float32)
 
 
-@lru_cache
+@per_region
 def load_model():
-    if not MODEL.exists():
-        return None
-    return joblib.load(MODEL)
+    p = model_path()
+    return joblib.load(p) if p.exists() else None
 
 
-@lru_cache
+@per_region
 def metrics() -> dict | None:
-    return json.loads(METRICS.read_text(encoding="utf-8")) if METRICS.exists() else None
+    p = metrics_path()
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
 def quickscan(ctx: FloodContext, rain: float, dur: float, scale: float) -> dict:

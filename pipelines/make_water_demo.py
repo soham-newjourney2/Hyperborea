@@ -14,11 +14,12 @@ import geopandas as gpd
 import numpy as np
 
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
-UTM = 32645
+UTM = R.metric_crs()
 SEED = 7
 N = 8
-OUT = ROOT / "data" / "synthetic" / "water_quality.geojson"
+OUT = R.data_dir("synthetic") / "water_quality.geojson"
 # Plausible ranges for urban canals / wetland ponds (assumed, demo only).
 RANGES = {"ph": (6.6, 8.4, "pH units"), "turbidity": (8.0, 85.0, "NTU"), "tds": (180.0, 950.0, "mg/L")}
 REFERENCE = {"ph": "IS 10500 desirable 6.5–8.5 (drinking water; context only)",
@@ -28,7 +29,7 @@ REFERENCE = {"ph": "IS 10500 desirable 6.5–8.5 (drinking water; context only)"
 
 def main() -> None:
     rng = np.random.default_rng(SEED)
-    g = ROOT / "data" / "processed" / "hyperborea.gpkg"
+    g = R.data_dir("processed") / "hyperborea.gpkg"
     bnd = gpd.read_file(g, layer="boundary").to_crs(UTM).geometry.iloc[0]
     ww = gpd.read_file(g, layer="waterways").to_crs(UTM)
     ww = ww[ww.distance(bnd) < 600]

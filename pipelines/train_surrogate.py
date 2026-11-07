@@ -24,10 +24,11 @@ from backend.app.api.scenarios import flood_context
 from backend.engine.flood import run_flood
 from backend.engine.surrogate import FEATURES, METRICS, MODEL, drain_static, features
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 N_RUNS, SEED, BLOCK_M, TEST_SHARE = 2000, 42, 500, 0.25
 BOUNDS = {"rain_mm_h": (5, 120), "duration_h": (0.5, 6), "condition_scale": (0.6, 1.2)}
-CARD = ROOT / "models" / "model_cards" / "surrogate.md"
+CARD = R.model_dir() / "model_cards" / "surrogate.md"
 
 
 def main() -> None:
@@ -47,7 +48,7 @@ def main() -> None:
     print(f"{N_RUNS} engine runs × {len(ids)} drains = {len(y):,} rows · {y.mean():.1%} overloaded · {time.time() - t0:.0f} s")
 
     # spatial blocks (500 m grid of drain midpoints) → hold out 25 % of blocks
-    dr = gpd.read_file(ROOT / "data" / "processed" / "drainage.gpkg", layer="drains").set_index("asset_id").to_crs(32645)
+    dr = gpd.read_file(R.data_dir("processed") / "drainage.gpkg", layer="drains").set_index("asset_id").to_crs(R.metric_crs())
     mid = dr.geometry.interpolate(0.5, normalized=True).loc[ids]
     block = (np.floor(mid.x / BLOCK_M).astype(int) * 1000 + np.floor(mid.y / BLOCK_M).astype(int)).to_numpy()
     blocks = np.unique(block)

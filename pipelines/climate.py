@@ -15,12 +15,13 @@ import pandas as pd
 from scipy import stats
 
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 URL = "https://archive-api.open-meteo.com/v1/archive"
 START = date(1981, 1, 1)
 # IMD daily rainfall categories (mm/day): heavy 64.5–115.5, very heavy 115.6–204.4, extremely heavy ≥ 204.5
 IMD = {"heavy": 64.5, "very_heavy": 115.6, "extremely_heavy": 204.5}
-OUT = ROOT / "data" / "processed"
+OUT = R.data_dir("processed")
 
 
 def last_full_month_end(today: date) -> date:
@@ -30,7 +31,7 @@ def last_full_month_end(today: date) -> date:
 def fetch(lat: float, lon: float, end: date) -> tuple[pd.DataFrame, dict]:
     params = {
         "latitude": lat, "longitude": lon, "start_date": START.isoformat(), "end_date": end.isoformat(),
-        "daily": "precipitation_sum,temperature_2m_max,temperature_2m_min", "timezone": "Asia/Kolkata",
+        "daily": "precipitation_sum,temperature_2m_max,temperature_2m_min", "timezone": R.cfg()["timezone"],
         "models": "era5",
     }
     r = httpx.get(URL, params=params, timeout=120, headers={"User-Agent": "Hyperborea/0.1 (hackathon research)"})
@@ -93,7 +94,7 @@ def summarise(df: pd.DataFrame, grid: dict, end: date) -> dict:
 
 
 def main() -> None:
-    region = gpd.read_file(ROOT / "data" / "curated" / "boundary.geojson").to_crs(32645).centroid.to_crs(4326).iloc[0]
+    region = gpd.read_file(R.data_dir("curated") / "boundary.geojson").to_crs(R.metric_crs()).centroid.to_crs(4326).iloc[0]
     end = last_full_month_end(date.today())
     df, grid = fetch(region.y, region.x, end)
     OUT.mkdir(parents=True, exist_ok=True)

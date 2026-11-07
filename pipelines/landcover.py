@@ -20,11 +20,13 @@ from rasterio.enums import Resampling
 from rasterio.features import rasterize
 
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
 BUFFER_M = 300
-OUT_JSON = ROOT / "data" / "processed" / "landcover_stats.json"
-OVERLAYS = ROOT / "frontend" / "public" / "overlays"
+OUT_JSON = R.data_dir("processed") / "landcover_stats.json"
+OVERLAY_REL = "overlays" if R.current() == R.DEFAULT else f"overlays/regions/{R.current()}"  # P17: per-region PNGs
+OVERLAYS = ROOT / "frontend" / "public" / OVERLAY_REL
 WC_CLASSES = {  # code: (label, official colour)
     10: ("Tree cover", "#006400"), 20: ("Shrubland", "#ffbb22"), 30: ("Grassland", "#ffff4c"),
     40: ("Cropland", "#f096ff"), 50: ("Built-up", "#fa0000"), 60: ("Bare / sparse", "#b4b4b4"),
@@ -32,7 +34,7 @@ WC_CLASSES = {  # code: (label, official colour)
     95: ("Mangroves", "#00cf75"), 100: ("Moss / lichen", "#fae6a0"),
 }
 GREEN = {10, 20, 30, 40, 90, 95}
-S2_WINDOW = "2025-12-01/2026-03-31"  # latest complete dry season (low cloud)
+S2_WINDOW = R.cfg().get("s2_window", "2025-12-01/2026-03-31")  # latest complete dry season (low cloud)
 MAX_SCENES = 6
 SCL_BAD = {0, 1, 3, 8, 9, 10, 11}  # no data, saturated, cloud shadow, cloud med/high, cirrus, snow
 
@@ -47,10 +49,10 @@ def hex2rgb(h: str) -> tuple[int, int, int]:
 
 
 def main() -> None:
-    g = ROOT / "data" / "processed" / "hyperborea.gpkg"
+    g = R.data_dir("processed") / "hyperborea.gpkg"
     bnd = gpd.read_file(g, layer="boundary")
-    cats = gpd.read_file(ROOT / "data" / "processed" / "drainage.gpkg", layer="catchments")
-    area = bnd.to_crs(32645).buffer(BUFFER_M).to_crs(4326)
+    cats = gpd.read_file(R.data_dir("processed") / "drainage.gpkg", layer="catchments")
+    area = bnd.to_crs(R.metric_crs()).buffer(BUFFER_M).to_crs(4326)
     w, s, e, n = area.total_bounds
     cat = pystac_client.Client.open(STAC, modifier=planetary_computer.sign_inplace)
 
@@ -89,7 +91,7 @@ def main() -> None:
                    key=lambda i: i.properties["eo:cloud_cover"])[:MAX_SCENES]
     stack, used = [], []
     for it in items:
-        epsg = it.properties.get("proj:epsg") or 32645
+        epsg = it.properties.get("proj:epsg") or R.metric_crs()
         box = gpd.GeoSeries.from_xy([w, e], [s, n], crs=4326).to_crs(epsg).total_bounds
         rd = lambda b: xr.open_dataarray(it.assets[b].href, engine="rasterio").squeeze(drop=True).rio.clip_box(*box)  # noqa: E731
         b4, b8 = rd("B04").astype("float32"), rd("B08").astype("float32")
@@ -121,8 +123,8 @@ def main() -> None:
                  "pilot_mean": round(ndvi_pilot, 3), "range_shown": [-0.1, 0.8], "colormap": "RdYlGn",
                  "note": "per-pixel median of low-cloud dry-season scenes; clouds/shadows masked with SCL"},
         "per_catchment": per,
-        "overlays": {"worldcover": {"url": "overlays/worldcover.png", "bounds": b4326},
-                     "ndvi": {"url": "overlays/ndvi.png", "bounds": b4326}},
+        "overlays": {"worldcover": {"url": f"{OVERLAY_REL}/worldcover.png", "bounds": b4326},
+                     "ndvi": {"url": f"{OVERLAY_REL}/ndvi.png", "bounds": b4326}},
         "runoff_c_source": "default",
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }

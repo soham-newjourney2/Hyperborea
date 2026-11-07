@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { withRegion } from '../lib/region'
 import { getAsset, getExplainStatus, getModels, getPresets, getQuickscan, postExplain, runFlood, type ExplainResponse, type Explanation,
   type FloodResult, type ModelCard, type Preset, type QuickScan } from '../lib/api'
 import { KIND, PROB_STOPS, SCENARIO } from '../lib/styles'
@@ -326,7 +327,7 @@ export default function DisasterLab() {
               try {
                 if (img) localStorage.setItem(`hyperborea.report.img.${flood.result_id}`, img)
               } catch { /* storage full / blocked: report without map image */ }
-              window.open(`${window.location.pathname}?report=${flood.result_id}`, '_blank')
+              window.open(withRegion(`${window.location.pathname}?report=${flood.result_id}`), '_blank')
             }} className="rounded border border-sky-600 px-2 py-1 text-xs text-sky-300 hover:bg-sky-500/10">
               Open report
             </button>

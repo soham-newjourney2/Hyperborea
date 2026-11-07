@@ -1,19 +1,18 @@
 """P12 endpoint: /access/summary?result_id= (planning §8) — baseline or flood-scenario accessibility."""
 from collections import OrderedDict
-from functools import lru_cache
 
 from fastapi import APIRouter, HTTPException
 
 from ...engine import access as ea
-from ..core.paths import PROCESSED
+from ..core.regions import current, data_dir, per_region
 
 router = APIRouter()
 _scen: OrderedDict[str, dict] = OrderedDict()  # result_id → access scenario (LRU 16)
 
 
-@lru_cache
+@per_region
 def get_access() -> ea.AccessContext | None:
-    p = PROCESSED / "drive_graph.json"
+    p = data_dir() / "drive_graph.json"
     return ea.load_context(p) if p.exists() else None
 
 
@@ -21,7 +20,7 @@ def scenario_for(result: dict) -> dict | None:
     ctx = get_access()
     if ctx is None:
         return None
-    rid = result["result_id"]
+    rid = f"{current()}:{result['result_id']}"
     if rid not in _scen:
         _scen[rid] = ea.scenario(ctx, result)
         if len(_scen) > 16:
@@ -43,8 +42,8 @@ def access_summary(result_id: str | None = None) -> dict:
         for cat, v in ctx.baseline.items():
             out["categories"][cat] = {"stats": ea.stats(v["buildings"]), "minutes": _minutes(v["buildings"])}
         return out
-    from .scenarios import _cache  # flood results cached by params hash
-    res = _cache.data.get(result_id)
+    from .scenarios import result_cache  # flood results cached by params hash
+    res = result_cache().data.get(result_id)
     if res is None:
         raise HTTPException(404, "Unknown result_id — run POST /scenarios/flood first")
     sc = scenario_for(res)

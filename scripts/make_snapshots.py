@@ -1,6 +1,7 @@
 """P04: freeze API responses into frontend/public/snapshots/ for the offline fallback.
 
 Run with the API up:  python scripts/make_snapshots.py [api_base]   (default http://127.0.0.1:8000/api)
+P16: region from HYPERBOREA_REGION (default sector_v → snapshots/; others → snapshots/regions/<id>/).
 File names must match `snapshotName()` in frontend/src/lib/api.ts. Regenerate at the end of every phase.
 """
 import json
@@ -13,8 +14,12 @@ import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from backend.app.core import regions as R  # noqa: E402
 from backend.app.core.config import get_settings  # noqa: E402  (admin password from .env)
-OUT = ROOT / "frontend" / "public" / "snapshots"
+SNAP_ROOT = ROOT / "frontend" / "public" / "snapshots"
+RID = R.current()
+OUT = SNAP_ROOT if RID == R.DEFAULT else SNAP_ROOT / "regions" / RID
+DATA_SNAP = R.data_dir("snapshots")
 # Same extents the map requests (MapView FULL_EXTENT): these two in full, the rest pilot-only.
 FULL_EXTENT = {"facilities", "boundary", "drains", "drain_nodes", "outfalls", "catchments", "sites",
                "substations", "transformers", "feeders", "water_quality", "cv_water"}  # must match MapView FULL_EXTENT
@@ -22,7 +27,7 @@ FULL_EXTENT = {"facilities", "boundary", "drains", "drain_nodes", "outfalls", "c
 
 def main(base: str = "http://127.0.0.1:8000/api") -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    c = httpx.Client(base_url=base, timeout=60)
+    c = httpx.Client(base_url=base, timeout=60, params={"region": RID})
     tok = c.post("/auth/login", json={"password": get_settings().admin_password}).raise_for_status().json()["access_token"]
     c.headers["Authorization"] = f"Bearer {tok}"
     files: dict[str, bytes] = {}
@@ -46,30 +51,39 @@ def main(base: str = "http://127.0.0.1:8000/api") -> None:
     for preset in ("heavy", "extreme"):
         body = c.post("/scenarios/flood", json={"preset": preset}).raise_for_status().content
         files[f"flood_{preset}.json"] = body
-        (ROOT / "data" / "snapshots").mkdir(parents=True, exist_ok=True)
-        (ROOT / "data" / "snapshots" / f"flood_{preset}.json").write_bytes(body)
+        DATA_SNAP.mkdir(parents=True, exist_ok=True)
+        (DATA_SNAP / f"flood_{preset}.json").write_bytes(body)
     # P09 fixed demo comparison: A = S2 as-is, B = S2 + detention + drain upsize, C = S1 alternative site.
     cmp = {"options": [{"site_id": "S2", "label": "A · S2 as proposed"},
                        {"site_id": "S2", "upgrades": ["detention", "drain_upsize", "transformer"], "label": "B · S2 + upgrades"},
                        {"site_id": "S1", "label": "C · alternative site S1"}]}
     body = c.post("/development/compare", json=cmp).raise_for_status().content
     files["dev_compare.json"] = body
-    (ROOT / "data" / "snapshots" / "dev_compare.json").write_bytes(body)
+    (DATA_SNAP / "dev_compare.json").write_bytes(body)
     # Backend's own weather fallback (cache format) → data/snapshots/weather.json
     for name in ("weather.json", "air.json"):  # backend fallbacks (cache format)
-        cache = ROOT / "local" / "cache" / name
+        cache = R.local_dir("cache") / name
         if cache.exists():
-            (ROOT / "data" / "snapshots").mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(cache, ROOT / "data" / "snapshots" / name)
+            DATA_SNAP.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(cache, DATA_SNAP / name)
 
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     files["health.json"] = json.dumps({**health, "status": "snapshot", "snapshot_at": stamp}).encode()
+    # Region list for the offline switcher: only regions that have snapshots are "ready" offline.
+    reg = c.get("/regions").raise_for_status().json()
+    have = {RID} | {p.name for p in (SNAP_ROOT / "regions").glob("*") if (p / "health.json").exists()}
+    for r in reg["regions"]:
+        r["status"] = "ready" if r["id"] in have or (r["default"] and (SNAP_ROOT / "health.json").exists()) else "no-data"
+    SNAP_ROOT.mkdir(parents=True, exist_ok=True)
+    (SNAP_ROOT / "regions.json").write_text(json.dumps(reg), encoding="utf-8")
+    OUT.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("*.json"):
-        old.unlink()
+        if old.name != "regions.json":
+            old.unlink()
     for name, body in files.items():
         (OUT / name).write_bytes(body)
     total = sum(len(b) for b in files.values()) / 1e6
-    print(f"wrote {len(files)} snapshots ({total:.1f} MB) to {OUT.relative_to(ROOT)} at {stamp}")
+    print(f"{RID}: wrote {len(files)} snapshots ({total:.1f} MB) to {OUT.relative_to(ROOT)} at {stamp}")
 
 
 if __name__ == "__main__":

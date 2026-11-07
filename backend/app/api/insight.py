@@ -1,6 +1,5 @@
 """P14 endpoints: /infra-health, /explain (+ /explain/status), /report/{result_id} (planning §8)."""
 from datetime import datetime, timezone
-from functools import lru_cache
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
@@ -9,8 +8,9 @@ from pydantic import BaseModel
 from ...engine import explain as ex
 from ...engine import health as eh
 from ..core.config import get_settings
+from ..core.regions import cfg, per_region
 from .access import get_access
-from .scenarios import _cache, attach_access, flood_context
+from .scenarios import attach_access, flood_context, result_cache
 from .weather import presets_data
 
 router = APIRouter()
@@ -28,7 +28,7 @@ def _model() -> str:
     return get_settings().ollama_model or DEFAULT_MODEL
 
 
-@lru_cache
+@per_region
 def health_data() -> dict:
     return eh.compute(flood_context(), presets_data(), get_access())
 
@@ -48,7 +48,7 @@ class ExplainRequest(BaseModel):
 
 
 def _result(result_id: str) -> dict:
-    res = _cache.data.get(result_id)
+    res = result_cache().data.get(result_id)
     if res is None:
         raise HTTPException(404, "Unknown result_id — run POST /scenarios/flood first")
     return attach_access(res)
@@ -76,7 +76,7 @@ def explain(req: ExplainRequest) -> dict:
 def report(result_id: str) -> dict:
     res = _result(result_id)
     return {
-        "result_id": result_id, "title": "Hyperborea scenario report — Salt Lake Sector V pilot",
+        "result_id": result_id, "title": f"Hyperborea scenario report — {cfg()['name']}, {cfg()['city']} pilot", "region": cfg()["id"],
         "label": res["label"], "data_status": res["data_status"], "params": res["params"], "summary": res["summary"],
         "narrative": ex.template(ex.facts(res, None)),
         "affected": res["affected"][:60], "affected_total": len(res["affected"]),

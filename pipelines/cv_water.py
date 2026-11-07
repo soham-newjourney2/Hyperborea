@@ -20,17 +20,18 @@ from rasterio.features import shapes
 from shapely.geometry import shape
 
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
-UTM = 32645
+UTM = R.metric_crs()
 BUFFER_M = 300
 THRESHOLD = 0.1          # urban McFeeters threshold (0 is the textbook value; 0.1 cuts built-up false positives)
 MIN_AREA_M2 = 400        # ≥ 4 pixels at 10 m
 MAX_SCENES = 5
-SEASONS = {"dry": "2025-12-01/2026-03-31", "post_monsoon": "2025-10-01/2025-11-30"}
+SEASONS = R.cfg().get("water_seasons") or {"dry": "2025-12-01/2026-03-31", "post_monsoon": "2025-10-01/2025-11-30"}
 SCL_BAD = {0, 1, 3, 8, 9, 10, 11}
-OUT = ROOT / "data" / "processed" / "cv_water.gpkg"
-CARD = ROOT / "models" / "model_cards" / "cv_water.md"
+OUT = R.data_dir("processed") / "cv_water.gpkg"
+CARD = R.model_dir() / "model_cards" / "cv_water.md"
 
 
 def season_ndwi(cat, bbox_utm, window: str):
@@ -57,7 +58,7 @@ def season_ndwi(cat, bbox_utm, window: str):
 
 def main() -> None:
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    g = ROOT / "data" / "processed" / "hyperborea.gpkg"
+    g = R.data_dir("processed") / "hyperborea.gpkg"
     bnd = gpd.read_file(g, layer="boundary").to_crs(UTM)
     area = bnd.buffer(BUFFER_M).iloc[0]
     bbox = np.array(area.bounds)
@@ -94,7 +95,7 @@ def main() -> None:
     gdf = gpd.GeoDataFrame(rows, geometry=geoms, crs=UTM).to_crs(4326)
     OUT.unlink(missing_ok=True)
     gdf.to_file(OUT, layer="cv_water", driver="GPKG", layer_options={"SPATIAL_INDEX": "NO"})
-    (ROOT / "data" / "processed" / "cv_water_summary.json").write_text(json.dumps({
+    (R.data_dir("processed") / "cv_water_summary.json").write_text(json.dumps({
         "method": "NDWI (McFeeters 1996) threshold — spectral index, not machine learning (D-21)",
         "threshold": THRESHOLD, "min_area_m2": MIN_AREA_M2, "seasons": summary, "generated_at": now}, indent=1), encoding="utf-8")
     write_card(summary)

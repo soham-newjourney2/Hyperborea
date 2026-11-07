@@ -17,8 +17,8 @@ from shapely.geometry import Polygon, shape
 from ..app.core.paths import CONFIG
 from .flood import FloodContext, run_flood
 from .hydraulics import manning_full_circular, next_pipe_size, rational_runoff
+from ..app.core.regions import metric_crs as utm  # P16: active region's UTM zone (Sector V = 32645)
 
-UTM = 32645
 LABEL = "Screening assessment — not an approval"
 DATA_STATUS = "modelled (simulated drainage, assumed norms)"
 VERDICTS = {
@@ -109,9 +109,9 @@ def assess(ctx: FloodContext, layers: dict[str, gpd.GeoDataFrame], presets: list
         geom4326 = shape(params["geometry"])
         if not isinstance(geom4326, Polygon) or not geom4326.is_valid:
             raise ValueError("geometry must be a valid GeoJSON Polygon")
-    g = gpd.GeoSeries([geom4326], crs=4326).to_crs(UTM)
+    g = gpd.GeoSeries([geom4326], crs=4326).to_crs(utm())
     poly, centre = g.iloc[0], g.centroid.iloc[0]
-    boundary = layers["boundary"].to_crs(UTM).geometry.iloc[0]
+    boundary = layers["boundary"].to_crs(utm()).geometry.iloc[0]
     if not poly.within(boundary.buffer(1)):
         raise ValueError("proposed footprint must lie inside the pilot boundary")
     area = poly.area
@@ -148,19 +148,19 @@ def assess(ctx: FloodContext, layers: dict[str, gpd.GeoDataFrame], presets: list
     }
 
     # ---- context: catchment, receiving drain, land use, road, facilities ---------------------------
-    cats = layers["catchments"].to_crs(UTM)
+    cats = layers["catchments"].to_crs(utm())
     hit = cats[cats.contains(centre)]
     cat_id = hit.asset_id.iloc[0] if len(hit) else None
     recv = ctx.cat[cat_id]["drain_id"] if cat_id in ctx.cat else None
-    lu = layers["landuse"].to_crs(UTM)
+    lu = layers["landuse"].to_crs(utm())
     lu_hit = lu[lu.contains(centre)]
     landuse = lu_hit.asset_type.iloc[0] if len(lu_hit) else None
-    roads = layers["roads"].to_crs(UTM)
+    roads = layers["roads"].to_crs(utm())
     dist = roads.distance(poly)
     ri = dist.idxmin()
     road_id, road_d = roads.asset_id.loc[ri], float(dist.loc[ri])
     road_cls = _road_class(_attrs(roads["attrs"].loc[ri]).get("highway"))
-    fac = layers["facilities"].to_crs(UTM)
+    fac = layers["facilities"].to_crs(utm())
     near = {}
     for t in ("hospital", "fire_station"):
         f = fac[fac.asset_type == t]
@@ -258,7 +258,7 @@ def assess(ctx: FloodContext, layers: dict[str, gpd.GeoDataFrame], presets: list
     lim = ck["facilities"]
     if access is not None:
         from .access import minutes_from, nearest_node
-        c4326 = gpd.GeoSeries([centre], crs=UTM).to_crs(4326).iloc[0]
+        c4326 = gpd.GeoSeries([centre], crs=utm()).to_crs(4326).iloc[0]
         node = nearest_node(access, c4326.x, c4326.y)
         tmin = {t: minutes_from(access, access.baseline, cat, node) for t, cat in (("hospital", "hospital"), ("fire_station", "fire"))}
         if any(v is None for v in tmin.values()):
@@ -295,7 +295,7 @@ def assess(ctx: FloodContext, layers: dict[str, gpd.GeoDataFrame], presets: list
                                 "detail": f"needs ~{kva:,.0f} kVA; no distribution network loaded",
                                 "data_status": "unknown", "source_ids": ["norms"]}
     else:
-        tu = tl.to_crs(UTM)
+        tu = tl.to_crs(utm())
         dd = tu.distance(centre)
         j = dd.idxmin()
         tid, ta = tu.asset_id.loc[j], _attrs(tu["attrs"].loc[j])

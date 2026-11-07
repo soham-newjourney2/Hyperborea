@@ -1,11 +1,11 @@
 """P05 endpoints: /weather/current, /weather/forecast, /climate/summary, /scenarios/presets (planning §8)."""
 import json
-from functools import lru_cache
 
 import yaml
 from fastapi import APIRouter, HTTPException
 
-from ..core.paths import CONFIG, PROCESSED
+from ..core.paths import CONFIG
+from ..core.regions import data_dir, per_region
 from ..services.layer_store import get_store
 from ..services.weather import WeatherUnavailable, get_weather
 
@@ -35,9 +35,9 @@ def weather_forecast() -> dict:
     return _weather()
 
 
-@lru_cache
+@per_region
 def climate_summary_data() -> dict | None:
-    path = PROCESSED / "climate_summary.json"
+    path = data_dir() / "climate_summary.json"
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
 
@@ -49,7 +49,7 @@ def climate_summary() -> dict:
     return s
 
 
-@lru_cache
+@per_region
 def presets_data() -> list[dict]:
     cfg = yaml.safe_load((CONFIG / "scenarios.yaml").read_text(encoding="utf-8"))
     climate = climate_summary_data()

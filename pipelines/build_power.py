@@ -20,10 +20,11 @@ from shapely.ops import nearest_points
 from sklearn.cluster import KMeans
 
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
-UTM = 32645
-G = ROOT / "data" / "processed" / "hyperborea.gpkg"
-OUT = ROOT / "data" / "processed" / "power.gpkg"
+UTM = R.metric_crs()
+G = R.data_dir("processed") / "hyperborea.gpkg"
+OUT = R.data_dir("processed") / "power.gpkg"
 NORMS = yaml.safe_load((ROOT / "config" / "norms.yaml").read_text(encoding="utf-8"))
 DIST_RATINGS = [100, 160, 250, 400, 630]      # kVA distribution transformers (11 kV / 433 V)
 HT_RATINGS = [1000, 1600, 2000, 2500]         # dedicated HT consumer transformers
@@ -36,6 +37,27 @@ PRIMARY = "Mahishbathan 33/11 KV Sub-Station"  # OSM substation inside the pilot
 UPSTREAM = "Salt Lake"                          # OSM grid substation inside the pilot (132/33 kV assumed)
 COMMERCIAL_LU = {"commercial", "industrial", "retail", "construction"}
 COMMERCIAL_USE = {"office", "commercial", "retail", "industrial", "college", "university", "hospital", "hotel"}
+
+
+def _kv(attrs: str) -> float:
+    """Highest voltage in an OSM `voltage` tag (e.g. "132000;33000") in kV; 0 if absent."""
+    v = str(json.loads(attrs).get("voltage") or "")
+    nums = [float(x) for x in v.replace(",", ";").split(";") if x.strip().replace(".", "", 1).isdigit()]
+    return max(nums) / 1000 if nums else 0.0
+
+
+def auto_substations(subs: gpd.GeoDataFrame, bnd) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    """P17 (non-default regions): primary = OSM substation nearest the pilot centre; upstream = highest-voltage other."""
+    if subs.empty:
+        return subs, subs
+    s = subs.assign(_d=subs.geometry.distance(bnd.centroid), _kv=subs["attrs"].map(_kv)).sort_values("_d")
+    s = s[s._d <= 3000]
+    if s.empty:
+        return s, s
+    prim = s.iloc[[0]]
+    rest = s.iloc[1:]
+    up = rest.sort_values(["_kv", "_d"], ascending=[False, True]).iloc[[0]] if len(rest) else rest
+    return prim, up
 
 
 def building_loads(b: gpd.GeoDataFrame, lu: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -104,14 +126,18 @@ def main() -> None:
 
     # --- substations (OSM positions, curated) ---
     subs = osm[osm.asset_type == "substation"]
-    prim = subs[subs["name"] == PRIMARY]
-    up = subs[subs["name"] == UPSTREAM]
+    if R.current() == R.DEFAULT:
+        prim = subs[subs["name"] == PRIMARY]
+        up = subs[subs["name"] == UPSTREAM]
+    else:
+        prim, up = auto_substations(subs, bnd)
     sub_rows = []
     for row, role, kv, mva in ((prim, "primary 33/11 kV (assumed 2 × 31.5 MVA)", "33/11", 63), (up, "grid 132/33 kV (assumed)", "132/33", 150)):
         if row.empty:
             continue
         r = row.iloc[0]
-        sub_rows.append({"asset_id": f"sub_cur_{r.asset_id.split('_')[-1]}", "name": r["name"], "role": role,
+        name = r["name"] if isinstance(r["name"], str) and r["name"] else f"OSM substation {r.asset_id.split('_')[-1]}"
+        sub_rows.append({"asset_id": f"sub_cur_{r.asset_id.split('_')[-1]}", "name": name, "role": role,
                          "kv": kv, "rating_mva": mva, "osm_id": r.asset_id, "geometry": r.geometry.representative_point()})
     if not sub_rows:  # fallback: synthetic central substation
         sub_rows.append({"asset_id": "sub_syn_central", "name": "Synthetic 33/11 kV substation", "role": "primary 33/11 kV",

@@ -20,6 +20,7 @@ describe('snapshotName', () => {
     expect(snapshotName('scenarios/presets')).toBe('scenarios_presets.json')
     expect(snapshotName('environment/landcover')).toBe('environment_landcover.json')
     expect(snapshotName('infra-health?type=transformer&top=10')).toBe('infra_health_transformer.json')
+    expect(snapshotName('regions')).toBe('regions.json')
   })
   it('returns null for endpoints without snapshots', () => {
     expect(snapshotName('assets/bld_osm_w1')).toBeNull()

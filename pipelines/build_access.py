@@ -13,8 +13,9 @@ import geopandas as gpd
 import osmnx as ox
 
 from pipelines.osm_common import ROOT
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
-OUT = ROOT / "data" / "processed" / "drive_graph.json"
+OUT = R.data_dir("processed") / "drive_graph.json"
 # Assumed free-flow urban speeds (km/h) for Salt Lake when OSM has no maxspeed.
 HWY_SPEEDS = {"motorway": 60, "trunk": 50, "primary": 40, "secondary": 30, "tertiary": 25, "unclassified": 20,
               "residential": 20, "living_street": 10, "service": 15, "motorway_link": 40, "trunk_link": 35,
@@ -22,12 +23,12 @@ HWY_SPEEDS = {"motorway": 60, "trunk": 50, "primary": 40, "secondary": 30, "tert
 
 
 def main() -> None:
-    raw = max(p.parent for p in (ROOT / "data" / "raw" / "osm").glob("*/meta.json"))
+    raw = max(p.parent for p in (R.data_dir("raw") / "osm").glob("*/meta.json"))
     G = ox.load_graphml(raw / "drive.graphml")
     G = ox.routing.add_edge_speeds(G, hwy_speeds=HWY_SPEEDS, fallback=20)
     G = ox.routing.add_edge_travel_times(G)
 
-    roads = gpd.read_file(ROOT / "data" / "processed" / "hyperborea.gpkg", layer="roads")
+    roads = gpd.read_file(R.data_dir("processed") / "hyperborea.gpkg", layer="roads")
     ra = roads["attrs"].map(json.loads)
     road_of = {}
     for aid, a in zip(roads.asset_id, ra):
@@ -44,12 +45,12 @@ def main() -> None:
     nodes = [[int(n), round(d["x"], 6), round(d["y"], 6)] for n, d in G.nodes(data=True)]
 
     def snap(gdf):
-        pts = gdf.to_crs(32645).representative_point().to_crs(4326)
+        pts = gdf.to_crs(R.metric_crs()).representative_point().to_crs(4326)
         ids = ox.distance.nearest_nodes(G, pts.x.values, pts.y.values)
         return dict(zip(gdf.asset_id, (int(i) for i in ids)))
 
-    blds = gpd.read_file(ROOT / "data" / "processed" / "hyperborea.gpkg", layer="buildings")
-    fac = gpd.read_file(ROOT / "data" / "processed" / "hyperborea.gpkg", layer="facilities")
+    blds = gpd.read_file(R.data_dir("processed") / "hyperborea.gpkg", layer="buildings")
+    fac = gpd.read_file(R.data_dir("processed") / "hyperborea.gpkg", layer="facilities")
     fac_nodes = snap(fac)
     out = {
         "source_id": "osm", "data_status": "modelled",

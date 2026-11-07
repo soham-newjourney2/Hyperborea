@@ -1,16 +1,15 @@
 """P07 endpoints: /graph/summary, /graph/neighbors/{id}, /graph/path (planning §8)."""
-from functools import lru_cache
-
 import networkx as nx
 from fastapi import APIRouter, HTTPException, Query
 
 from ...engine import graph as eg
+from ..core.regions import per_region
 from ..services.layer_store import get_store
 
 router = APIRouter()
 
 
-@lru_cache
+@per_region
 def get_graph() -> nx.MultiDiGraph:
     return eg.build_graph({k: v.gdf for k, v in get_store().layers.items()})
 

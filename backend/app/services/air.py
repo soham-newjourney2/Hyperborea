@@ -15,6 +15,7 @@ import httpx
 import yaml
 
 from ..core.paths import CONFIG, LOCAL, SNAPSHOTS
+from ..core.regions import cfg, data_dir, local_dir
 
 URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 POLLUTANTS = ["pm2_5", "pm10", "nitrogen_dioxide", "ozone"]
@@ -54,7 +55,7 @@ def category(aqi: int) -> dict:
 
 
 def fetch_live(lat: float, lon: float) -> dict:
-    params = {"latitude": lat, "longitude": lon, "hourly": ",".join(POLLUTANTS), "timezone": "Asia/Kolkata",
+    params = {"latitude": lat, "longitude": lon, "hourly": ",".join(POLLUTANTS), "timezone": cfg()["timezone"],
               "past_days": 1, "forecast_days": 3}
     r = httpx.get(URL, params=params, timeout=5, headers={"User-Agent": "Hyperborea/0.1"})
     r.raise_for_status()
@@ -94,8 +95,10 @@ def summarise(raw: dict, now_local: str | None = None) -> dict:
             "hourly": rows}
 
 
-def get_air(lat: float, lon: float, fetch: Callable[[float, float], dict] = fetch_live, cache: Path = CACHE,
-            snapshot: Path = SNAPSHOT) -> dict:
+def get_air(lat: float, lon: float, fetch: Callable[[float, float], dict] = fetch_live, cache: Path | None = None,
+            snapshot: Path | None = None) -> dict:
+    cache = cache or local_dir("cache") / CACHE.name  # P16: one cache + snapshot per region
+    snapshot = snapshot or data_dir("snapshots") / SNAPSHOT.name
     cached = _read(cache)
     origin, stale, reason = "cache", False, None
     if cached and time.time() - cached.get("fetched_ts", 0) < TTL_S:

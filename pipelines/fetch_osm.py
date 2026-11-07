@@ -17,8 +17,9 @@ import pandas as pd
 
 from pipelines import osm_pbf
 from pipelines.osm_common import ROOT, overpass
+from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
-UTM = 32645
+UTM = R.metric_crs()
 BUFFER_M = 2000
 TILE_M2 = 4e6  # public Overpass mirrors time out on the full ~30 km² building query
 LAYERS = {
@@ -51,10 +52,10 @@ def sanitize(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 def main(source: str = "pbf") -> None:
-    boundary = gpd.read_file(ROOT / "data" / "curated" / "boundary.geojson")
+    boundary = gpd.read_file(R.data_dir("curated") / "boundary.geojson")
     area = boundary.to_crs(UTM).buffer(BUFFER_M).to_crs(4326).union_all()
     stamp = datetime.now(timezone.utc)
-    final = ROOT / "data" / "raw" / "osm" / stamp.strftime("%Y%m%dT%H%M%SZ")
+    final = R.data_dir("raw") / "osm" / stamp.strftime("%Y%m%dT%H%M%SZ")
     out = final.with_name(final.name + ".partial")  # renamed only when complete
     out.mkdir(parents=True, exist_ok=False)
     ox.settings.max_query_area_size = TILE_M2  # split into small Overpass queries (cached per tile)
@@ -62,7 +63,7 @@ def main(source: str = "pbf") -> None:
     if source == "pbf":
         pbf = osm_pbf.ensure_pbf()
         xml = osm_pbf.clip(pbf, area.bounds, out)
-        access = {"via": "geofabrik_pbf", "url": osm_pbf.PBF_URL, "osm_data_at": "2026-11-05T14:54:52+00:00"}
+        access = {"via": "geofabrik_pbf", "url": osm_pbf.PBF_URL, "osm_data_at": osm_pbf.data_timestamp(pbf)}
         features = lambda tags: ox.features_from_xml(xml["features"], polygon=area, tags=tags)  # noqa: E731
 
         def graph(net):

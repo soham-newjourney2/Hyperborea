@@ -45,6 +45,7 @@ Template:
 - Processing: `pipelines/fetch_osm.py` (raw, timestamped, immutable) → `pipelines/normalize_osm.py` (make_valid, dedupe by id + geometry, provenance props, `in_pilot` flag) → `data/processed/hyperborea.gpkg`
 - Quality / limitations: pilot: 0 of 1,510 buildings carry a `height` tag, 11 (0.7 %) carry `building:levels`, 1,499 use the 9 m default; footprints incomplete in informal areas; facility points are representative points of footprints; no drainage/power network topology in OSM
 - Attribution text shown in UI: "© OpenStreetMap contributors (ODbL)"
+- **P17+ regions (D-22)**: same pipeline, per-region extract from `config/regions.yaml` `osm_pbf`: Chennai Velachery ← `asia/india/southern-zone-261105.osm.pbf` (559 MB), Pune Kharadi ← `asia/india/western-zone-261105.osm.pbf` (222 MB); Geofabrik builds of 2026-11-06 (exact OSM timestamp from the pbf header in `data/raw/regions/<id>/osm/<stamp>/meta.json`). Metric CRS per region (UTM 44N / 43N). Licence ODbL 1.0 (same). Accessed 2026-11-07.
 
 ### cur_boundary — Hyperborea pilot boundary (Salt Lake Sector V)
 - Provider / access: ours — `pipelines/scan_candidates.py` + `pipelines/make_boundary.py`   - Licence / terms: ODbL-derived (built from OSM)   - Verified: n/a
@@ -53,6 +54,7 @@ Template:
 - Processing: polygonize OSM roads in the Bidhannagar ∩ study window → assign each cell to the nearest `"XX Block"` place label (≤ 450 m) → dissolve Sector V blocks (AN AP AQ BN CN CP DN DP EM EN GN GP HM) → drop slivers < 2 % of largest part
 - Quality / limitations: not an official municipal boundary; edges follow roads, block membership from the Salt Lake block grid
 - Attribution text shown in UI: "Pilot boundary: Hyperborea (derived from © OpenStreetMap contributors)"
+- **P16+ regions (D-22)**: Chennai Velachery 3.07 km², Pune Kharadi 3.18 km², London Hackney Wick & Stratford 2.90 km², Sydney Green Square & Alexandria 3.12 km² — curated **study rectangles** (`config/regions.yaml` `bbox`, `pipelines/make_region_boundary.py`, confidence low), not official or ward boundaries; chosen by Hyperborea for flood relevance.
 
 ### om_forecast — Open-Meteo Forecast API (current + 72 h hourly)
 - Provider / access: api.open-meteo.com `/v1/forecast` (no key), `backend/app/services/weather.py`   - Licence / terms: data CC BY 4.0; free API for non-commercial use   - Verified: yes (open-meteo.com licence page, 2026-11-06)
@@ -162,3 +164,6 @@ Template:
 - Provider / access: ours, `pipelines/train_surrogate.py` → `models/surrogate.joblib` (scikit-learn HistGradientBoosting, BSD-3 library; model MIT)
 - Coverage: 542 simulated drains; trained on 2,000 Latin-hypercube runs of the P08 engine; held-out spatial blocks
 - data_status: modelled (surrogate of a simulated rule engine — not validated on real events)   - Used by: P13 `/ml/quickscan`, Disaster Lab AI quick-scan; model card `models/model_cards/surrogate.md`
+
+### P17 reuse note — global sources for Chennai + Pune
+- Copernicus DEM (`cop_dem`), ERA5 (`om_archive`), Open-Meteo forecast (`om_forecast`) and CAMS (`om_aq`), ESA WorldCover (`esa_wc`), Sentinel-2 L2A (`s2_l2a`) are global: same providers, licences and processing, per-region bbox + timezone (Asia/Kolkata). IMD thresholds (`imd_thresholds`) and India NAQI (`naqi`) apply to both (India). Drainage, power, water-quality points stay **simulated** (`syn_drain`, `syn_power`, `syn_water`): no machine-readable municipal drain or utility data was found (Chennai GCC: ward PDF maps only; Pune PMC on OpenCity: two CSV tables (primary drain channels + coverage 2012, ward-wise road drain coverage 2016; public domain) with no geometry, so they cannot place drains) — checked 2026-11-07.

@@ -1,18 +1,16 @@
 """P08: POST /scenarios/flood (planning §8) — rainfall cascade on a scenario overlay."""
-from functools import lru_cache
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ...engine.access import road_block_step
 from ...engine.flood import FloodContext, ResultCache, build_context
+from ..core.regions import per_region
 from ..services.layer_store import get_store
 from .access import get_access, scenario_for
 from .graph import get_graph
 from .weather import presets_data
 
 router = APIRouter()
-_cache = ResultCache()
 
 
 class FloodRequest(BaseModel):
@@ -22,7 +20,12 @@ class FloodRequest(BaseModel):
     condition_scale: float = Field(1.0, ge=0.3, le=1.5, description="× drain condition factors (siltation slider)")
 
 
-@lru_cache
+@per_region
+def result_cache() -> ResultCache:
+    return ResultCache()  # result_ids are only valid within their region
+
+
+@per_region
 def flood_context() -> FloodContext:
     store = get_store()
     needed = {"drains", "catchments", "roads", "buildings"}
@@ -72,4 +75,4 @@ def attach_access(res: dict) -> dict:
 
 @router.post("/scenarios/flood")
 def scenario_flood(req: FloodRequest) -> dict:
-    return attach_access(_cache.get_or_run(flood_context(), resolve(req)))
+    return attach_access(result_cache().get_or_run(flood_context(), resolve(req)))

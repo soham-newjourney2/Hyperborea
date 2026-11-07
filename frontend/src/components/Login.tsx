@@ -25,7 +25,7 @@ export default function Login({ onDone }: { onDone: (role: string) => void }) {
       <form onSubmit={submit} className="w-80 space-y-3 rounded-lg border border-slate-800 bg-slate-950/90 p-5 shadow-2xl">
         <div>
           <h1 className="text-lg font-semibold tracking-[0.3em] text-sky-300">HYPERBOREA</h1>
-          <p className="text-xs text-slate-500">Urban intelligence · Salt Lake Sector V pilot · admin access</p>
+          <p className="text-xs text-slate-500">Urban intelligence · multi-city pilots · admin access</p>
         </div>
         <label className="block text-xs text-slate-400">
           Password
