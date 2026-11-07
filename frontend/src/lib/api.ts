@@ -1,3 +1,5 @@
+import { AUTH_EVENT, AuthError, currentToken } from './auth'
+
 // API client. Base URL from VITE_API_URL (planning §8).
 // Offline fallback (P04): any request that fails or takes > 5 s is served from public/snapshots/*.json
 // (made by scripts/make_snapshots.py) and the app shows an "Offline snapshot" badge.
@@ -20,6 +22,8 @@ export function snapshotName(path: string): string | null {
   if (SNAPSHOT_PATHS.has(p)) return `${p.replace('/', '_')}.json`
   const m = /^layers\/([^/]+)$/.exec(p)
   if (m) return `layer_${decodeURIComponent(m[1])}${/(^|&)in_pilot=true(&|$)/.test(q) ? '_pilot' : ''}.json`
+  const h = p === 'infra-health' ? /(?:^|&)type=(drain|transformer|road)(?:&|$)/.exec(q) : null
+  if (h) return `infra_health_${h[1]}.json` // top-10 lists (P15 offline)
   return null
 }
 
@@ -39,8 +43,16 @@ async function fetchWithTimeoutInit(url: string, init: RequestInit, signal: Abor
   const onAbort = () => ctrl.abort()
   signal?.addEventListener('abort', onAbort)
   const timer = setTimeout(() => ctrl.abort(), ms)
+  const tok = currentToken()
+  const headers = new Headers(init.headers)
+  if (tok) headers.set('Authorization', `Bearer ${tok}`)
   try {
-    return await fetch(url, { ...init, signal: ctrl.signal })
+    const r = await fetch(url, { ...init, headers, signal: ctrl.signal })
+    if (r.status === 401) {
+      window.dispatchEvent(new Event(AUTH_EVENT)) // P15: a guarded API wants a login — never fall back to snapshots
+      throw new AuthError()
+    }
+    return r
   } finally {
     clearTimeout(timer)
     signal?.removeEventListener('abort', onAbort)
@@ -53,7 +65,7 @@ async function getJson<T>(path: string, signal?: AbortSignal, timeoutMs = TIMEOU
     if (!r.ok) throw new Error(`${path} ${r.status}`)
     return (await r.json()) as T
   } catch (err) {
-    if (signal?.aborted) throw err // caller cancelled — not an outage
+    if (signal?.aborted || err instanceof AuthError) throw err // cancelled or not logged in — not an outage
     const name = snapshotName(path)
     if (!name) throw err
     const r = await fetch(SNAPSHOT_BASE + name, { signal })
@@ -431,7 +443,7 @@ export async function runFlood(body: FloodRequest, signal?: AbortSignal): Promis
     if (!r.ok) throw new Error(`flood ${r.status}: ${(await r.json().catch(() => ({}))).detail ?? ''}`)
     return (await r.json()) as FloodResult
   } catch (err) {
-    if (signal?.aborted) throw err
+    if (signal?.aborted || err instanceof AuthError) throw err
     const plain = body.rain_mm_h === undefined && body.duration_h === undefined && (body.condition_scale ?? 1) === 1
     if (!plain || !body.preset || !['heavy', 'extreme'].includes(body.preset)) throw err
     const r = await fetch(`${SNAPSHOT_BASE}flood_${body.preset}.json`, { signal })
@@ -505,7 +517,7 @@ export async function compareDevelopment(options: DevRequest[], signal?: AbortSi
   try {
     return await postJson<DevCompare>('development/compare', { options }, signal)
   } catch (err) {
-    if (signal?.aborted) throw err
+    if (signal?.aborted || err instanceof AuthError) throw err
     const r = await fetch(`${SNAPSHOT_BASE}dev_compare.json`, { signal })
     if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) throw err
     return { ...((await r.json()) as DevCompare), offline: true }
@@ -660,3 +672,12 @@ export const getExplainStatus = (signal?: AbortSignal) => getJson<ExplainStatus>
 export const postExplain = (resultId: string, assetId: string | null, mode: 'template' | 'llm') =>
   postJson<ExplainResponse>('explain', { result_id: resultId, asset_id: assetId, mode })
 export const getReport = (resultId: string) => getJson<Report>(`report/${encodeURIComponent(resultId)}`)
+
+export interface LoginResponse { access_token: string; role: string; expires_at: string }
+export async function login(password: string): Promise<LoginResponse> {
+  const r = await fetch(apiUrl('auth/login'), {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password }),
+  })
+  if (!r.ok) throw new Error(r.status === 401 ? 'Wrong password' : `Login failed (${r.status})`)
+  return (await r.json()) as LoginResponse
+}

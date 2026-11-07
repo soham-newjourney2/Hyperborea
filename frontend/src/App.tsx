@@ -2,7 +2,9 @@ import { Suspense, lazy, useEffect, useState } from 'react'
 import AssetInspector from './components/AssetInspector'
 import LayerManager from './components/LayerManager'
 import Legend from './components/Legend'
+import Login from './components/Login'
 import MapView from './components/MapView'
+import { AUTH_EVENT, clearSession, currentToken } from './lib/auth'
 import { getHealth, getLayers, getRegion, getWeatherForecast, runFlood, type Health } from './lib/api'
 import { useApp } from './store'
 
@@ -157,10 +159,20 @@ function Panel({ title, children, className = '' }: { title: string; children: R
 
 export default function App() {
   const api = useApiHealth()
-  useBootstrap(api.kind === 'ok')
-  useWeatherPoll(api.kind === 'ok')
+  const [authed, setAuthed] = useState(() => Boolean(currentToken()))
+  useEffect(() => {
+    const onAuth = () => setAuthed(false)
+    window.addEventListener(AUTH_EVENT, onAuth)
+    return () => window.removeEventListener(AUTH_EVENT, onAuth)
+  }, [])
+  // live API → admin login required; unreachable API → offline snapshot without login (P04)
+  const live = api.kind === 'ok' && api.health.status !== 'snapshot'
+  const ready = api.kind === 'ok' && (authed || !live)
+  useBootstrap(ready)
+  useWeatherPoll(ready)
   const region = useApp((s) => s.region)
   const rightTab = useApp((s) => s.rightTab)
+  if (live && !authed) return <Login onDone={() => setAuthed(true)} />
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-2">
@@ -170,7 +182,14 @@ export default function App() {
             Urban intelligence · {region ? `${region.name} · ${String(region.attrs.area_km2 ?? '')} km²` : 'Salt Lake pilot'}
           </span>
         </div>
-        <ApiBadge state={api} />
+        <div className="flex items-center gap-2">
+          <ApiBadge state={api} />
+          {authed && (
+            <button onClick={() => { clearSession(); setAuthed(false) }} className="text-[11px] text-slate-500 hover:text-slate-200">
+              Sign out
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="flex min-h-0 flex-1">

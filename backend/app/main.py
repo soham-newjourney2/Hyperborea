@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from .api import access, development, environment, graph, health, insight, layers, ml, scenarios, weather
+from .api import access, auth, development, environment, graph, health, insight, layers, ml, scenarios, weather
+from .core.security import require_admin
 from .core import paths  # noqa: F401  (sets local cache defaults)
 from .core.config import VERSION, get_settings
 from .services.layer_store import get_store
@@ -29,14 +30,10 @@ app.add_middleware(
 )
 
 api = APIRouter(prefix="/api")
-api.include_router(health.router)
-api.include_router(layers.router)
-api.include_router(weather.router)
-api.include_router(graph.router)
-api.include_router(scenarios.router)
-api.include_router(development.router)
-api.include_router(environment.router)
-api.include_router(access.router)
-api.include_router(ml.router)
-api.include_router(insight.router)
+api.include_router(health.router)  # public: status only
+api.include_router(auth.router)  # public: login
+# P15: everything else requires an admin JWT (RBAC-ready: role claim checked in require_admin)
+guard = [Depends(require_admin)]
+for r in (layers, weather, graph, scenarios, development, environment, access, ml, insight):
+    api.include_router(r.router, dependencies=guard)
 app.include_router(api)

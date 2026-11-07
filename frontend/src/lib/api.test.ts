@@ -19,9 +19,11 @@ describe('snapshotName', () => {
     expect(snapshotName('climate/summary')).toBe('climate_summary.json')
     expect(snapshotName('scenarios/presets')).toBe('scenarios_presets.json')
     expect(snapshotName('environment/landcover')).toBe('environment_landcover.json')
+    expect(snapshotName('infra-health?type=transformer&top=10')).toBe('infra_health_transformer.json')
   })
   it('returns null for endpoints without snapshots', () => {
     expect(snapshotName('assets/bld_osm_w1')).toBeNull()
     expect(snapshotName('scenarios/flood')).toBeNull()
+    expect(snapshotName('infra-health?type=building')).toBeNull()
   })
 })
