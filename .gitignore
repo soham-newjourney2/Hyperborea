@@ -1,12 +1,8 @@
-# ---- local-only: Claude Code config + workflow (kept on this machine, never pushed) ----
-CLAUDE.md
-.claude/
-.mcp.json
-planning.md
-phases/
-docs/LOG.md
+# Private repo (user decision 2026-11-07): track everything teammates need — incl. Claude Code workflow files,
+# raw OSM data, rasters and the local LLM model (large files via Git LFS, see .gitattributes).
+# Still ignored: secrets, machine-specific environments, rebuildable caches and build output.
 
-# ---- secrets ----
+# ---- secrets (share .env out of band; template = .env.example) ----
 .env
 .env.*
 !.env.example
@@ -14,11 +10,18 @@ frontend/.env
 frontend/.env.*
 !frontend/.env.example
 
-# ---- local downloads, caches, models, tools (D-05) ----
-local/
+# ---- machine-specific environments (rebuild: pip install -r requirements-pipelines.txt / npm ci) ----
 .venv/
 venv/
 node_modules/
+
+# ---- rebuildable caches inside local/ (D-05) ----
+local/cache/
+local/hf/
+local/torch/
+local/*.log
+
+# ---- build output ----
 frontend/dist/
 .vercel/
 deploy/
@@ -35,23 +38,9 @@ htmlcov/
 .ipynb_checkpoints/
 *.egg-info/
 
-# ---- data: keep small processed vectors/JSON (< 5 MB each), ignore raw dumps and rasters ----
-data/raw/**
-!data/raw/.gitkeep
-*.tif
-*.tiff
-*.nc
-*.zarr/
-*.osm
-*.osm.pbf
-*.graphml
-*.gguf
-*.pt
-*.pth
-*.safetensors
-*.onnx
-
-# ---- logs / os / editor ----
+# ---- partial downloads / logs / os / editor ----
+*.part
+*.partial/
 *.log
 npm-debug.log*
 .DS_Store
@@ -60,3 +49,10 @@ desktop.ini
 .idea/
 .vscode/*
 !.vscode/settings.json
+
+# portable machine tools (not shared)
+local/tools/gh/
+
+# local LLM (4.7 GB): too large to push — teammates run python scripts/install_ollama.py + ollama pull
+local/ollama/
+local/tools/ollama/

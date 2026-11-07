@@ -1,0 +1,62 @@
+{
+  "source_id": "osm",
+  "fetched_at": "2026-11-06T10:41:51+00:00",
+  "boundary": "bnd_cur_sector_v",
+  "buffer_m": 2000,
+  "bbox_4326": [
+    88.3999971740048,
+    22.548954838577863,
+    88.4643656231867,
+    22.605449311220447
+  ],
+  "osmnx": "2.1.1",
+  "via": "geofabrik_pbf",
+  "url": "https://download.geofabrik.de/asia/india/eastern-zone-261104.osm.pbf",
+  "osm_data_at": "2026-11-05T14:54:52+00:00",
+  "tags": {
+    "buildings": {
+      "building": true
+    },
+    "amenities": {
+      "amenity": [
+        "hospital",
+        "clinic",
+        "school",
+        "college",
+        "university",
+        "fire_station",
+        "police"
+      ],
+      "railway": [
+        "station",
+        "halt"
+      ],
+      "station": [
+        "subway"
+      ]
+    },
+    "power": {
+      "power": true
+    },
+    "waterways": {
+      "waterway": true,
+      "natural": [
+        "water",
+        "wetland"
+      ]
+    },
+    "landuse": {
+      "landuse": true
+    }
+  },
+  "counts": {
+    "buildings": 22553,
+    "amenities": 96,
+    "power": 20,
+    "waterways": 577,
+    "landuse": 263,
+    "drive_edges": 11386,
+    "walk_edges": 14778
+  },
+  "licence": "ODbL 1.0 \u2014 \u00a9 OpenStreetMap contributors"
+}

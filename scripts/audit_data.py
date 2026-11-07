@@ -78,9 +78,7 @@ def _repo_and_report(rows, fails, ready) -> None:
     if any(t == ".env" or t.endswith("/.env") for t in tracked):
         repo.append("FAIL: .env is tracked")
     # 2026-11-07: Claude workflow files are tracked on purpose (private repo, user decision); large files go via LFS
-    attr = subprocess.run(["git", "check-attr", "filter", "--stdin"], cwd=ROOT, capture_output=True, text=True,
-                          input="\n".join(tracked)).stdout.splitlines()
-    lfs = {line.split(": filter: ")[0] for line in attr if line.endswith(": filter: lfs")}
+    lfs = set(subprocess.run(["git", "lfs", "ls-files", "-n"], cwd=ROOT, capture_output=True, text=True).stdout.splitlines())
     big = [(t, (ROOT / t).stat().st_size) for t in tracked
            if t not in lfs and (ROOT / t).exists() and (ROOT / t).stat().st_size > 5 * 1024 * 1024]
     if big:
@@ -123,7 +121,7 @@ def _repo_and_report(rows, fails, ready) -> None:
     if fails:
         lines += ["## Failures", *[f"- {f}" for f in fails], ""]
     OUT.write_text("\n".join(lines), encoding="utf-8")
-    print(f"audit {'PASS' if not fails else 'FAIL'}: {len(ready)} region(s), {len(rows)} layers, {total:,} features → "
+    print(f"audit {'PASS' if not fails else 'FAIL'}: {len(ready)} region(s), {len(rows)} layers, {total:,} features -> "
           f"{OUT.relative_to(ROOT)}")
     for f in fails:
         print("  ", f)

@@ -1,6 +1,6 @@
 # Data audit — PASS
 
-Generated 2026-11-07T16:13:25+00:00 by `scripts/audit_data.py` over every layer the API serves in 3 region(s) — sector_v, chennai_velachery, pune_kharadi (51 layers, 33,938 features). Status mix: observed 27,089, simulated 6,748, curated 53, modelled 48.
+Generated 2026-11-07T17:22:47+00:00 by `scripts/audit_data.py` over every layer the API serves in 3 region(s) — sector_v, chennai_velachery, pune_kharadi (51 layers, 33,938 features). Status mix: observed 27,089, simulated 6,748, curated 53, modelled 48.
 
 | Region · layer | Features | data_status | source_id | Result |
 |---|---|---|---|---|
@@ -58,7 +58,7 @@ Generated 2026-11-07T16:13:25+00:00 by `scripts/audit_data.py` over every layer 
 
 ## Repository checks
 - `.env` tracked: no
-- Files in Git LFS: 0
+- Files in Git LFS: 47
 - Non-LFS files > 5 MB: none
 - Possible secrets in tracked text files: none
 

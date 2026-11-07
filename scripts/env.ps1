@@ -15,6 +15,8 @@ $env:OLLAMA_MODELS   = Join-Path $local 'ollama\models'
 $env:OSMNX_CACHE     = Join-Path $local 'cache\osmnx'
 $ollama = Join-Path $local 'tools\ollama'
 if (Test-Path $ollama) { $env:PATH = "$ollama;$env:PATH" }
+$gh = Join-Path $local 'tools\gh\bin'   # portable GitHub CLI (optional)
+if (Test-Path $gh) { $env:PATH = "$gh;$env:PATH"; $env:GH_CONFIG_DIR = Join-Path $local 'cache\gh' }
 
 $venv = Join-Path $root '.venv\Scripts\Activate.ps1'
 if (Test-Path $venv) { . $venv } else { Write-Host 'No .venv yet - create it in P01: python -m venv .venv' }

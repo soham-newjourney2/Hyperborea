@@ -1,7 +1,6 @@
 # Large binaries via Git LFS (user decision 2026-11-07). Teammates: `git lfs install` before cloning.
 local/osm/** filter=lfs diff=lfs merge=lfs -text
 local/rasters/** filter=lfs diff=lfs merge=lfs -text
-local/ollama/** filter=lfs diff=lfs merge=lfs -text
 local/tools/** filter=lfs diff=lfs merge=lfs -text
 *.osm.pbf filter=lfs diff=lfs merge=lfs -text
 *.osm filter=lfs diff=lfs merge=lfs -text

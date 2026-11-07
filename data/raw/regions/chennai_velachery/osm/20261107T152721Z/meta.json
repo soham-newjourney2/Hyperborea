@@ -1,0 +1,62 @@
+{
+  "source_id": "osm",
+  "fetched_at": "2026-11-07T15:27:21+00:00",
+  "boundary": "bnd_cur_chennai_velachery",
+  "buffer_m": 2000,
+  "bbox_4326": [
+    80.19155952681561,
+    12.952916090699997,
+    80.24444061776398,
+    13.005083862440548
+  ],
+  "osmnx": "2.1.1",
+  "via": "geofabrik_pbf",
+  "url": "https://download.geofabrik.de/asia/india/southern-zone-261105.osm.pbf",
+  "osm_data_at": "2026-11-05T21:23:02Z",
+  "tags": {
+    "buildings": {
+      "building": true
+    },
+    "amenities": {
+      "amenity": [
+        "hospital",
+        "clinic",
+        "school",
+        "college",
+        "university",
+        "fire_station",
+        "police"
+      ],
+      "railway": [
+        "station",
+        "halt"
+      ],
+      "station": [
+        "subway"
+      ]
+    },
+    "power": {
+      "power": true
+    },
+    "waterways": {
+      "waterway": true,
+      "natural": [
+        "water",
+        "wetland"
+      ]
+    },
+    "landuse": {
+      "landuse": true
+    }
+  },
+  "counts": {
+    "buildings": 26434,
+    "amenities": 111,
+    "power": 57,
+    "waterways": 120,
+    "landuse": 119,
+    "drive_edges": 13464,
+    "walk_edges": 14902
+  },
+  "licence": "ODbL 1.0 \u2014 \u00a9 OpenStreetMap contributors"
+}

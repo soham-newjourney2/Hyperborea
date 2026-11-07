@@ -13,4 +13,5 @@ if (-not (Test-Path .env)) {
   Copy-Item .env.example .env
   Write-Host "Created .env from .env.example - set ADMIN_PASSWORD and a 32+ char JWT_SECRET (ask the team)." -ForegroundColor Yellow
 }
+Write-Host "Optional local LLM (not in the repo, 4.7 GB): python scripts/install_ollama.py; ollama pull qwen3:4b-instruct-2507-q4_K_M" -ForegroundColor Cyan
 Write-Host "Done. Start with: . .\scripts\env.ps1; .\scripts\dev.ps1" -ForegroundColor Green
