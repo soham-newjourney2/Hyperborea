@@ -43,6 +43,7 @@ interface AppState {
   overlays: { worldcover: boolean; ndvi: boolean }
   accessView: AccessView | null
   quick: Record<string, number> | null
+  captureMap: (() => string | null) | null
   setRegion: (r: Region) => void
   setLayers: (l: LayerMeta[]) => void
   toggle: (id: string) => void
@@ -65,6 +66,7 @@ interface AppState {
   setOverlay: (k: 'worldcover' | 'ndvi', on: boolean) => void
   setAccessView: (v: AccessView | null) => void
   setQuick: (q: Record<string, number> | null) => void
+  setCaptureMap: (f: (() => string | null) | null) => void
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -88,6 +90,7 @@ export const useApp = create<AppState>((set) => ({
   drawn: null,
   accessView: null,
   quick: null,
+  captureMap: null,
   overlays: (() => {
     const o = new URLSearchParams(window.location.search).get('overlay') // ?overlay=ndvi|worldcover
     return { worldcover: o === 'worldcover', ndvi: o === 'ndvi' }
@@ -134,6 +137,7 @@ export const useApp = create<AppState>((set) => ({
   cancelDraw: () => set({ drawing: false, drawPoints: [] }),
   // one overlay at a time (both are opaque-ish rasters over the same area)
   setAccessView: (accessView) => set({ accessView }),
+  setCaptureMap: (captureMap) => set({ captureMap }),
   setQuick: (quick) => set((s) => ({ quick, visible: quick ? { ...s.visible, drains: true } : s.visible })),
   setOverlay: (k, on) => set(() => ({ overlays: { worldcover: false, ndvi: false, [k]: on } })),
   setFlood: (flood) =>

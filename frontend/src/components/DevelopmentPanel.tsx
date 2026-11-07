@@ -179,11 +179,15 @@ export default function DevelopmentPanel() {
     const alt = site === 'S1' || drawn ? 'S3' : 'S1'
     const bUps = ups.length ? ups : ['detention', 'drain_upsize', 'transformer']
     try {
-      setCmp(await compareDevelopment([
+      const res = await compareDevelopment([
         { ...req({ upgrades: [] }), label: `A · ${source} as proposed` },
         { ...req({ upgrades: bUps }), label: `B · ${source} + upgrades` },
         { site_id: alt, use, floors, upgrades: [], design_preset: design, label: `C · alternative site ${alt}` },
-      ]))
+      ])
+      setCmp(res)
+      try {
+        localStorage.setItem('hyperborea.report.dev', JSON.stringify(res)) // shown in the scenario report
+      } catch { /* ignore */ }
     } catch (e) {
       setErr(`Compare failed: ${(e as Error).message}`)
     } finally {

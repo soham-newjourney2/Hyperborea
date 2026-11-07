@@ -464,6 +464,7 @@ export default function MapView() {
       maximumRenderTimeChange: Infinity,
       msaaSamples: 4,
       shouldAnimate: false,
+      contextOptions: { webgl: { preserveDrawingBuffer: true } }, // report map capture (P14)
     })
     const scene = viewer.scene
     viewer.clock.currentTime = NOW.clone()
@@ -510,6 +511,15 @@ export default function MapView() {
       if (useApp.getState().drawing) useApp.getState().finishDraw()
     }, ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
     viewerRef.current = viewer
+    useApp.getState().setCaptureMap(() => {
+      if (viewer.isDestroyed()) return null
+      viewer.scene.render()
+      try {
+        return viewer.scene.canvas.toDataURL('image/jpeg', 0.82)
+      } catch {
+        return null
+      }
+    })
     const map = sources.current
     const [idx, lk] = [entityIndex.current, looks.current]
     return () => {

@@ -487,12 +487,12 @@ export interface DevCompare {
   offline?: boolean
 }
 
-async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+async function postJson<T>(path: string, body: unknown, signal?: AbortSignal, timeoutMs = 90000): Promise<T> {
   const r = await fetchWithTimeoutInit(apiUrl(path), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
-  }, signal, LAYER_TIMEOUT_MS)
+  }, signal, timeoutMs)
   if (!r.ok) throw new Error(String((await r.json().catch(() => ({}))).detail ?? r.status))
   return (await r.json()) as T
 }
@@ -604,3 +604,59 @@ export interface ModelCard {
 export const getQuickscan = (rain: number, dur: number, cond: number, compare = false, signal?: AbortSignal) =>
   getJson<QuickScan>(`ml/quickscan?rain_mm_h=${rain}&duration_h=${dur}&condition_scale=${cond}${compare ? '&compare=true' : ''}`, signal)
 export const getModels = (signal?: AbortSignal) => getJson<ModelCard[]>('models', signal)
+
+// ---- P14 infrastructure health, explainer, report ------------------------------------------------------
+export interface HealthItem {
+  asset_id: string
+  kind: string
+  name: string | null
+  health_index: number
+  components: Record<string, number>
+  weights: Record<string, number>
+  simulated_inputs: string[]
+  reasons: string[]
+  numbers: Record<string, unknown>
+}
+export interface InfraHealthResponse {
+  type: string
+  label: string
+  formula: string
+  weights: Record<string, number>
+  simulated_inputs: string[]
+  count: number
+  items: HealthItem[]
+}
+export interface ExplainResponse {
+  text: string
+  mode: 'template' | 'llm'
+  grounded: boolean
+  model: string | null
+  fallback_reason?: string
+}
+export interface ExplainStatus {
+  default_mode: string
+  llm: { available: boolean; server: boolean; models: string[]; model: string }
+  note: string
+}
+export interface Report {
+  result_id: string
+  title: string
+  label: string
+  data_status: string
+  params: FloodParams
+  summary: FloodSummary
+  narrative: string
+  affected: AffectedAsset[]
+  affected_total: number
+  assumptions: string[]
+  simulated_parts: string[]
+  limitations: string[]
+  attributions: string[]
+  generated_at: string
+}
+export const getInfraHealth = (type: string, top = 10, signal?: AbortSignal) =>
+  getJson<InfraHealthResponse>(`infra-health?type=${type}&top=${top}`, signal, LAYER_TIMEOUT_MS)
+export const getExplainStatus = (signal?: AbortSignal) => getJson<ExplainStatus>('explain/status', signal)
+export const postExplain = (resultId: string, assetId: string | null, mode: 'template' | 'llm') =>
+  postJson<ExplainResponse>('explain', { result_id: resultId, asset_id: assetId, mode })
+export const getReport = (resultId: string) => getJson<Report>(`report/${encodeURIComponent(resultId)}`)

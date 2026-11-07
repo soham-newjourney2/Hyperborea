@@ -7,3 +7,12 @@ body { margin: 0; background: #0b0f14; color: #d6dee8; }
   from { opacity: 0; transform: translateY(6px) scale(0.97); }
   to { opacity: 1; transform: none; }
 }
+
+/* P14 report: light, print-friendly */
+@media print {
+  .no-print { display: none !important; }
+  html, body, #root { background: #fff !important; height: auto !important; }
+  .report { color: #0f172a; }
+  .report table, .report img, .report section { break-inside: avoid; }
+  @page { margin: 14mm; }
+}

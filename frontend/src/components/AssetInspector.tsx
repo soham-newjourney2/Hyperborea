@@ -3,6 +3,7 @@ import { getLandcover, type Landcover } from '../lib/api'
 import { HEIGHT_STATUS } from '../lib/provenance'
 import { UNITS } from '../lib/styles'
 import { useApp } from '../store'
+import InfraHealth from './InfraHealth'
 import ProvenanceBadge, { Chip } from './ProvenanceBadge'
 
 const HIDDEN_ATTRS = new Set(['height_status', 'u', 'v', 'key', 'formula', 'buildings', 'facilities', 'transformers', 'parameters'])
@@ -71,7 +72,13 @@ function Row({ k, v }: { k: string; v: React.ReactNode }) {
 
 export default function AssetInspector() {
   const { selectedId, selected } = useApp()
-  if (!selectedId) return <p className="text-sm text-slate-500">Click a building, road or facility on the map.</p>
+  if (!selectedId)
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-slate-500">Click a building, road or facility on the map.</p>
+        <InfraHealth />
+      </div>
+    )
   if (!selected) return <p className="text-sm text-slate-500">Loading {selectedId}…</p>
   const a = selected
   const hs = a.attrs.height_status ? HEIGHT_STATUS[String(a.attrs.height_status)] : undefined

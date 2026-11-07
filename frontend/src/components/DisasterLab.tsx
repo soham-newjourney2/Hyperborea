@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getAsset, getModels, getPresets, getQuickscan, runFlood, type Explanation, type FloodResult, type ModelCard, type Preset,
-  type QuickScan } from '../lib/api'
+import { getAsset, getExplainStatus, getModels, getPresets, getQuickscan, postExplain, runFlood, type ExplainResponse, type Explanation,
+  type FloodResult, type ModelCard, type Preset, type QuickScan } from '../lib/api'
 import { KIND, PROB_STOPS, SCENARIO } from '../lib/styles'
 import { useApp } from '../store'
 import ProvenanceBadge from './ProvenanceBadge'
@@ -56,7 +56,45 @@ function Tile({ label, value, sub, tone }: { label: string; value: string | numb
   )
 }
 
-function Why({ ex }: { ex: Explanation }) {
+function Plain({ resultId, assetId }: { resultId: string; assetId: string | null }) {
+  const [mode, setMode] = useState<'template' | 'llm'>('template')
+  const [llmOk, setLlmOk] = useState<string | null>(null)
+  const [out, setOut] = useState<ExplainResponse | null>(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    const c = new AbortController()
+    getExplainStatus(c.signal).then((s) => setLlmOk(s.llm.available ? s.llm.model : '')).catch(() => setLlmOk(''))
+    return () => c.abort()
+  }, [])
+  const run = (m: 'template' | 'llm') => {
+    setMode(m)
+    setBusy(true)
+    postExplain(resultId, assetId, m).then(setOut).catch(() => setOut(null)).finally(() => setBusy(false))
+  }
+  return (
+    <div className="rounded border border-slate-700 bg-slate-950/60 p-2 text-[11px]">
+      <div className="mb-1 flex items-center gap-1">
+        <span className="font-semibold text-slate-300">Plain-language explanation</span>
+        <button onClick={() => run('template')} className={`ml-auto rounded px-1.5 ${mode === 'template' ? 'bg-sky-500/20 text-sky-300' : 'text-slate-400'}`}>Template</button>
+        <button onClick={() => run('llm')} disabled={!llmOk} title={llmOk ? `local ${llmOk} via Ollama` : 'Local LLM not installed / not running (hosted mode uses the template)'}
+          className={`rounded px-1.5 disabled:opacity-40 ${mode === 'llm' ? 'bg-sky-500/20 text-sky-300' : 'text-slate-400'}`}>Local LLM</button>
+      </div>
+      {busy && <p className="text-slate-500">{mode === 'llm' ? 'Local LLM writing (≈5 s)…' : 'Writing…'}</p>}
+      {!busy && !out && <p className="text-slate-500">Choose Template (deterministic) or Local LLM (grounded: numbers checked against the engine facts).</p>}
+      {!busy && out && (
+        <>
+          <p className="leading-relaxed text-slate-200">{out.text}</p>
+          <p className="mt-1 text-[10px] text-slate-500">
+            {out.mode === 'llm' ? `Local LLM ${out.model} · grounding passed` : 'Deterministic template'}
+            {out.fallback_reason ? ` · LLM answer rejected → template (${out.fallback_reason})` : ''}
+          </p>
+        </>
+      )}
+    </div>
+  )
+}
+
+function Why({ ex, resultId }: { ex: Explanation; resultId: string }) {
   return (
     <section className="space-y-2 rounded border border-amber-500/40 bg-slate-900/70 p-2.5">
       <h3 className="text-[11px] font-semibold uppercase tracking-wider text-amber-300">Why? · {ex.trigger}</h3>
@@ -73,6 +111,7 @@ function Why({ ex }: { ex: Explanation }) {
           </li>
         ))}
       </ol>
+      <Plain key={ex.asset_id} resultId={resultId} assetId={ex.asset_id} />
       {ex.also?.map((a) => (
         <div key={a.title} className="rounded border border-slate-700 p-2">
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Also · {a.title} chain</p>
@@ -281,6 +320,17 @@ export default function DisasterLab() {
               Clear
             </button>
           )}
+          {flood && !flood.offline && (
+            <button onClick={() => {
+              const img = useApp.getState().captureMap?.()
+              try {
+                if (img) localStorage.setItem(`hyperborea.report.img.${flood.result_id}`, img)
+              } catch { /* storage full / blocked: report without map image */ }
+              window.open(`${window.location.pathname}?report=${flood.result_id}`, '_blank')
+            }} className="rounded border border-sky-600 px-2 py-1 text-xs text-sky-300 hover:bg-sky-500/10">
+              Open report
+            </button>
+          )}
           {ms !== null && flood && <span className="ml-auto text-[10px] text-slate-500">{flood.offline ? 'offline snapshot' : `${ms} ms`}</span>}
         </div>
         {err && <p className="text-[11px] text-amber-300">{err}</p>}
@@ -311,7 +361,7 @@ export default function DisasterLab() {
             )}
           </div>
 
-          {ex && <Why ex={ex} />}
+          {ex && <Why ex={ex} resultId={flood.result_id} />}
           {selectedId && !ex && <p className="text-[11px] text-slate-500">Selected asset is not affected in this scenario.</p>}
 
           <section>

@@ -37,4 +37,5 @@
 |---|---|---|---|---|---|
 | Flood surrogate | scikit-learn `HistGradientBoostingClassifier` trained by us on simulated engine runs | sklearn 1.9.1 | BSD-3-Clause (library), MIT (our model) | hosted API (CPU) | `models/model_cards/surrogate.md` |
 | Surface water | NDWI spectral index (McFeeters 1996) — **not ML** (D-21) | — | public method; Copernicus Sentinel data | offline pipeline | `models/model_cards/cv_water.md` |
-| Explainer (P14) | template text; optional local Ollama LLM | — | to record in P14 | local only | P14 |
+| Explainer — template (P14) | deterministic Python template over engine facts | — | MIT (ours) | hosted + local (default) | `models/model_cards/llm_explainer.md` |
+| Explainer — local LLM (P14) | Qwen3-4B-Instruct-2507 (`qwen3:4b-instruct-2507-q4_K_M`) via Ollama v0.40.15 | 2507, 4-bit | **Apache-2.0** (model, verified on Hugging Face 2026-11-07); Ollama MIT | local only (RTX 4050, 100 % GPU) — grounding-checked, falls back to template | `models/model_cards/llm_explainer.md` |
