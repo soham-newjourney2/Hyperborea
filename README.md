@@ -34,6 +34,8 @@ relationship graph, flood / power / access / development / health engines, expla
 data into small GeoPackages and JSON. Details and diagram: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Run locally (Windows / PowerShell)
+**Teammates: follow [SETUP.md](SETUP.md)** — every command, the optional local LLM, data rebuilds and troubleshooting.
+
 ```powershell
 py -3.12 -m venv .venv
 . .\scripts\env.ps1                         # env vars + caches inside the project, activates .venv
