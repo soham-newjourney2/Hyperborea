@@ -10,7 +10,7 @@ from backend.app.core.paths import GPKG, ROOT
 from backend.app.core.provenance import DataStatus, FeatureProps
 
 LAYERS = ["boundary", "buildings", "roads", "facilities", "waterways", "landuse", "osm_power",
-          "drains", "drain_nodes", "outfalls", "catchments", "substations", "transformers", "feeders"]
+          "drains", "drain_nodes", "outfalls", "catchments", "substations", "transformers", "feeders", "cv_water"]
 REQUIRED = ["asset_id", "asset_type", "data_status", "source_id", "ingested_at"]
 
 pytestmark = pytest.mark.skipif(not GPKG.exists(), reason="run pipelines.normalize_osm first")

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { getAsset, getPresets, runFlood, type Explanation, type FloodResult, type Preset } from '../lib/api'
-import { KIND, SCENARIO } from '../lib/styles'
+import { getAsset, getModels, getPresets, getQuickscan, runFlood, type Explanation, type FloodResult, type ModelCard, type Preset,
+  type QuickScan } from '../lib/api'
+import { KIND, PROB_STOPS, SCENARIO } from '../lib/styles'
 import { useApp } from '../store'
 import ProvenanceBadge from './ProvenanceBadge'
 
@@ -116,6 +117,94 @@ function Why({ ex }: { ex: Explanation }) {
   )
 }
 
+function ModelCardDrawer({ onClose }: { onClose: () => void }) {
+  const [cards, setCards] = useState<ModelCard[] | null>(null)
+  useEffect(() => {
+    const c = new AbortController()
+    getModels(c.signal).then(setCards).catch(() => setCards([]))
+    return () => c.abort()
+  }, [])
+  const s = cards?.find((m) => m.id === 'ml_surrogate')
+  const m = s?.metrics as { surrogate: Record<string, number>; baseline: Record<string, number | string>;
+    training: Record<string, unknown>; permutation_importance_auc: Record<string, number>; sklearn: string } | undefined
+  const limits = s?.card_markdown?.split('## Limitations')[1]?.trim().split('\n- ').map((x) => x.replace(/^- /, '')) ?? []
+  return (
+    <section className="space-y-2 rounded border border-sky-600/50 bg-slate-900/80 p-2.5 text-[11px]">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold uppercase tracking-wider text-sky-300">Model card · flood surrogate</h3>
+        <button onClick={onClose} className="text-slate-500 hover:text-slate-200">×</button>
+      </div>
+      {!m ? <p className="text-slate-500">{cards ? 'Model card unavailable.' : 'Loading…'}</p> : (
+        <>
+          <p className="text-slate-300">scikit-learn {m.sklearn} HistGradientBoostingClassifier · trained on {String(m.training.engine_runs)} simulated
+            engine runs ({Number(m.training.rows).toLocaleString()} drain-rows) · {String(m.training.split)}</p>
+          <table className="w-full tabular-nums">
+            <thead><tr className="text-left text-slate-500"><th></th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th></tr></thead>
+            <tbody>
+              <tr><td className="text-slate-300">Surrogate</td>{(['precision', 'recall', 'f1', 'roc_auc'] as const).map((k) => <td key={k} className="text-slate-100">{m.surrogate[k]}</td>)}</tr>
+              <tr><td className="text-slate-400">Baseline</td>{(['precision', 'recall', 'f1', 'roc_auc'] as const).map((k) => <td key={k} className="text-slate-400">{String(m.baseline[k])}</td>)}</tr>
+            </tbody>
+          </table>
+          <p className="text-slate-500">Baseline: {String(m.baseline.rule)} · held-out spatial blocks</p>
+          <p className="font-semibold text-slate-300">Feature importance (Δ ROC-AUC)</p>
+          <ul>{Object.entries(m.permutation_importance_auc).slice(0, 5).map(([k, v]) => <li key={k} className="flex justify-between text-slate-400"><span>{k}</span><span className="tabular-nums">{v}</span></li>)}</ul>
+          <p className="font-semibold text-slate-300">Limitations</p>
+          <ul className="list-disc pl-4 text-slate-400">{limits.map((l) => <li key={l}>{l}</li>)}</ul>
+          <p className="text-slate-500">Licence: MIT (model, ours) · scikit-learn BSD-3 · runs on CPU, no GPU or torch.</p>
+        </>
+      )}
+    </section>
+  )
+}
+
+function QuickScanPanel({ rain, dur, cond }: { rain: number; dur: number; cond: number }) {
+  const setQuick = useApp((s) => s.setQuick)
+  const [q, setQ] = useState<QuickScan | null>(null)
+  const [check, setCheck] = useState<QuickScan['vs_engine'] | null>(null)
+  const [card, setCard] = useState(false)
+  useEffect(() => {
+    const c = new AbortController()
+    const t = setTimeout(() => {
+      getQuickscan(rain, dur, cond, false, c.signal)
+        .then((r) => {
+          setQ(r)
+          setCheck(null)
+          setQuick(r.probabilities)
+        })
+        .catch(() => {})
+    }, 120) // debounce slider drags
+    return () => {
+      clearTimeout(t)
+      c.abort()
+    }
+  }, [rain, dur, cond, setQuick])
+  useEffect(() => () => setQuick(null), [setQuick])
+  return (
+    <section className="space-y-2 rounded border border-sky-600/50 bg-sky-500/5 p-2.5 text-[11px]">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold uppercase tracking-wider text-sky-300">AI quick-scan · instant</h3>
+        <button onClick={() => setCard((v) => !v)} className="text-sky-300 underline">model card</button>
+      </div>
+      <p className="text-slate-400">{q?.label ?? 'Surrogate of the rule engine, trained on simulated runs — not validated on real events'}</p>
+      {q && (
+        <div className="grid grid-cols-3 gap-1.5 tabular-nums">
+          <div className="rounded bg-slate-900/70 px-1.5 py-1"><div className="text-[9px] text-slate-500">PREDICTED</div><div className="text-base text-slate-50">{q.predicted_overloads}</div><div className="text-[10px] text-slate-500">drains p ≥ 0.5</div></div>
+          <div className="rounded bg-slate-900/70 px-1.5 py-1"><div className="text-[9px] text-slate-500">EXPECTED</div><div className="text-base text-slate-50">{q.expected_overloads}</div><div className="text-[10px] text-slate-500">Σ probability</div></div>
+          <div className="rounded bg-slate-900/70 px-1.5 py-1"><div className="text-[9px] text-slate-500">INFERENCE</div><div className="text-base text-slate-50">{q.inference_ms} ms</div><div className="text-[10px] text-slate-500">{q.drains} drains</div></div>
+        </div>
+      )}
+      <div className="h-2 rounded" style={{ background: `linear-gradient(90deg, ${PROB_STOPS.join(',')})` }} />
+      <div className="flex justify-between text-[10px] text-slate-500"><span>p = 0</span><span>0.5</span><span>1 overload probability</span></div>
+      <div className="flex items-center gap-2">
+        <button onClick={() => getQuickscan(rain, dur, cond, true).then((r) => setCheck(r.vs_engine ?? null)).catch(() => {})}
+          className="rounded border border-slate-700 px-2 py-0.5 text-slate-200 hover:border-sky-500">Check vs full engine</button>
+        {check && <span className="text-slate-300">agreement {check.agreement_pct}% · F1 {check.f1} · engine {check.engine_overloads} vs AI {check.surrogate_overloads}</span>}
+      </div>
+      {card && <ModelCardDrawer onClose={() => setCard(false)} />}
+    </section>
+  )
+}
+
 export default function DisasterLab() {
   const { flood, setFlood, selectedId, select, flyTo } = useApp()
   const [presets, setPresets] = useState<Preset[]>([])
@@ -126,6 +215,7 @@ export default function DisasterLab() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [ms, setMs] = useState<number | null>(null)
+  const [ai, setAi] = useState(() => new URLSearchParams(window.location.search).get('ai') === '1') // ?ai=1
 
   useEffect(() => {
     const ctrl = new AbortController()
@@ -194,7 +284,13 @@ export default function DisasterLab() {
           {ms !== null && flood && <span className="ml-auto text-[10px] text-slate-500">{flood.offline ? 'offline snapshot' : `${ms} ms`}</span>}
         </div>
         {err && <p className="text-[11px] text-amber-300">{err}</p>}
+        <label className="flex items-center gap-2 border-t border-slate-800 pt-2 text-[11px] text-slate-300">
+          <input type="checkbox" className="accent-sky-400" checked={ai} onChange={() => setAi((v) => !v)} />
+          AI quick-scan — instant surrogate map while you move the sliders
+        </label>
       </section>
+
+      {ai && <QuickScanPanel rain={rain} dur={dur} cond={cond} />}
 
       {s && flood && (
         <>

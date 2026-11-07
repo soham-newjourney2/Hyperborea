@@ -22,6 +22,7 @@ LAYER_META: dict[str, tuple[str, str, bool]] = {
     "facilities": ("Critical facilities", "Critical facilities", True),
     "waterways": ("Waterways & water bodies", "Water", False),
     "water_quality": ("Water quality points", "Water", False),
+    "cv_water": ("Surface water (NDWI index, not ML)", "Water", False),
     "drains": ("Drains (simulated)", "Drainage", False),
     "outfalls": ("Outfalls", "Drainage", False),
     "catchments": ("Catchments (simulated)", "Drainage", False),

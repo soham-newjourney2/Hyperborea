@@ -151,3 +151,14 @@ Template:
 - Coverage: 8 points on OSM canals / water bodies (pH, turbidity NTU, TDS mg/L, sample dates Oct 2026)
 - data_status: **simulated — DEMO DATA, not measurements** (no published values found, O-04)   - Used by: P11 water layer (points only, never interpolated)
 - Attribution text shown in UI: "DEMO DATA — simulated water-quality values"
+
+### cv_water — Surface water from Sentinel-2 NDWI (spectral index, not ML)
+- Provider / access: ours, `pipelines/cv_water.py` on `s2_l2a` (B03, B08, SCL)   - Licence: method public (McFeeters 1996); data "Contains modified Copernicus Sentinel data 2025–2026"
+- Coverage: pilot + 300 m; two seasons (dry Dec 2025–Mar 2026, post-monsoon Oct–Nov 2025), 5 scenes each, median NDWI > 0.1, polygons ≥ 400 m² → `data/processed/cv_water.gpkg`
+- data_status: modelled (index-derived)   - Used by: P13 water layer (Environment); model card `models/model_cards/cv_water.md` (D-21)
+- Quality / limitations: 10 m pixels, no monsoon (cloud) scenes, ≥ 99 % of area falls inside mapped OSM water (sanity check, not validation)
+
+### ml_surrogate — Flood surrogate model output
+- Provider / access: ours, `pipelines/train_surrogate.py` → `models/surrogate.joblib` (scikit-learn HistGradientBoosting, BSD-3 library; model MIT)
+- Coverage: 542 simulated drains; trained on 2,000 Latin-hypercube runs of the P08 engine; held-out spatial blocks
+- data_status: modelled (surrogate of a simulated rule engine — not validated on real events)   - Used by: P13 `/ml/quickscan`, Disaster Lab AI quick-scan; model card `models/model_cards/surrogate.md`

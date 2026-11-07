@@ -4,7 +4,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from .api import access, development, environment, graph, health, layers, scenarios, weather
+from .api import access, development, environment, graph, health, layers, ml, scenarios, weather
 from .core import paths  # noqa: F401  (sets local cache defaults)
 from .core.config import VERSION, get_settings
 from .services.layer_store import get_store
@@ -15,6 +15,7 @@ async def lifespan(_: FastAPI):
     get_store()  # load GeoPackages into memory at startup
     graph.get_graph()  # build the relationship graph once (P07)
     access.get_access()  # baseline travel times (P12)
+    ml.sg.load_model()  # surrogate (P13) — first quick-scan stays fast
     yield
 
 
@@ -36,4 +37,5 @@ api.include_router(scenarios.router)
 api.include_router(development.router)
 api.include_router(environment.router)
 api.include_router(access.router)
+api.include_router(ml.router)
 app.include_router(api)

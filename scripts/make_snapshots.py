@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "frontend" / "public" / "snapshots"
 # Same extents the map requests (MapView FULL_EXTENT): these two in full, the rest pilot-only.
 FULL_EXTENT = {"facilities", "boundary", "drains", "drain_nodes", "outfalls", "catchments", "sites",
-               "substations", "transformers", "feeders"}  # must match MapView FULL_EXTENT
+               "substations", "transformers", "feeders", "water_quality", "cv_water"}  # must match MapView FULL_EXTENT
 
 
 def main(base: str = "http://127.0.0.1:8000/api") -> None:

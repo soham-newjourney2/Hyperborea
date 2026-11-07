@@ -547,9 +547,9 @@ export interface Landcover {
 export const getAir = (signal?: AbortSignal) => getJson<AirQuality>('environment/air', signal)
 export const getWater = (signal?: AbortSignal) => getJson<WaterResponse>('environment/water', signal)
 let landcoverPromise: Promise<Landcover> | null = null
-/** Cached once per session (overlay bounds + per-catchment shares are static). */
-export function getLandcover(signal?: AbortSignal): Promise<Landcover> {
-  landcoverPromise ??= getJson<Landcover>('environment/landcover', signal).catch((e) => {
+/** Cached once per session (overlay bounds + per-catchment shares are static). Shared → never aborted by one caller. */
+export function getLandcover(): Promise<Landcover> {
+  landcoverPromise ??= getJson<Landcover>('environment/landcover').catch((e) => {
     landcoverPromise = null
     throw e
   })
@@ -579,3 +579,28 @@ export interface AccessSummary {
 }
 export const getAccessSummary = (resultId?: string, signal?: AbortSignal) =>
   getJson<AccessSummary>(`access/summary${resultId ? `?result_id=${encodeURIComponent(resultId)}` : ''}`, signal, LAYER_TIMEOUT_MS)
+
+// ---- P13 AI quick-scan + model cards -------------------------------------------------------------------
+export interface Metrics4 { precision: number; recall: number; f1: number; roc_auc: number }
+export interface QuickScan {
+  label: string
+  data_status: string
+  params: { rain_mm_h: number; duration_h: number; condition_scale: number }
+  probabilities: Record<string, number>
+  expected_overloads: number
+  predicted_overloads: number
+  drains: number
+  inference_ms: number
+  held_out: { surrogate: Metrics4; baseline: Metrics4 & { rule: string } }
+  vs_engine?: { engine_overloads: number; surrogate_overloads: number; agreement_pct: number; precision: number | null; recall: number | null; f1: number }
+}
+export interface ModelCard {
+  id: string
+  title: string
+  available: boolean
+  card_markdown: string | null
+  metrics: Record<string, unknown> | null
+}
+export const getQuickscan = (rain: number, dur: number, cond: number, compare = false, signal?: AbortSignal) =>
+  getJson<QuickScan>(`ml/quickscan?rain_mm_h=${rain}&duration_h=${dur}&condition_scale=${cond}${compare ? '&compare=true' : ''}`, signal)
+export const getModels = (signal?: AbortSignal) => getJson<ModelCard[]>('models', signal)

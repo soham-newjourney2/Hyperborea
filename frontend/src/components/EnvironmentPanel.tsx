@@ -165,12 +165,14 @@ function Water() {
 }
 
 function Land() {
-  const { overlays, setOverlay } = useApp()
+  const { overlays, setOverlay, visible, toggle } = useApp()
   const [s, setS] = useState<Landcover | null>(null)
   useEffect(() => {
-    const c = new AbortController()
-    getLandcover(c.signal).then(setS).catch(() => {})
-    return () => c.abort()
+    let live = true
+    getLandcover().then((x) => live && setS(x)).catch(() => {})
+    return () => {
+      live = false
+    }
   }, [])
   if (!s) return <p className="text-xs text-slate-500">Loading land cover…</p>
   const classes = Object.values(s.worldcover.classes)
@@ -185,6 +187,12 @@ function Land() {
           </label>
         ))}
         <p className="mt-1 text-[10px] text-slate-500">Brighter inside the pilot, faded in the 300 m buffer.</p>
+        <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-300">
+          <input type="checkbox" className="accent-sky-400" checked={Boolean(visible.cv_water)} onChange={() => toggle('cv_water')} />
+          Surface water polygons — NDWI spectral index (not ML), dry + post-monsoon
+          <span className="ml-auto"><ProvenanceBadge status="modelled" small /></span>
+        </label>
+        <p className="text-[10px] text-slate-500">≥ 99 % of detected water lies inside mapped OSM water (sanity check). 10 m pixels can't see street waterlogging.</p>
       </Card>
       <Card title="Land cover · pilot" right={<ProvenanceBadge status={s.worldcover.data_status} small />}>
         <ul className="space-y-1">

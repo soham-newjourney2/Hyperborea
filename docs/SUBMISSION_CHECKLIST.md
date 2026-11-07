@@ -30,3 +30,11 @@
 - [ ] Demo laptop: app runs locally too (`scripts/dev.ps1`), offline snapshots present
 - [ ] Backup video on laptop + USB
 - [ ] Fixed demo scenario from `docs/DEMO_SCRIPT.md`; no untested inputs live
+
+
+## AI components — open-source / free compliance (P13)
+| Component | Model / method | Version | Licence | Runs where | Card |
+|---|---|---|---|---|---|
+| Flood surrogate | scikit-learn `HistGradientBoostingClassifier` trained by us on simulated engine runs | sklearn 1.9.1 | BSD-3-Clause (library), MIT (our model) | hosted API (CPU) | `models/model_cards/surrogate.md` |
+| Surface water | NDWI spectral index (McFeeters 1996) — **not ML** (D-21) | — | public method; Copernicus Sentinel data | offline pipeline | `models/model_cards/cv_water.md` |
+| Explainer (P14) | template text; optional local Ollama LLM | — | to record in P14 | local only | P14 |

@@ -121,3 +121,7 @@ export const DELTA_STOPS = ['#334155', '#f59e0b', '#ef4444', '#991b1b']
 export const ACCESS_ISOLATED = '#d946ef'
 export const accessColor = (t: number) => ramp(ACCESS_STOPS, t)
 export const deltaColor = (t: number) => ramp(DELTA_STOPS, t)
+
+// ---- P13 quick-scan probability (sequential) -----------------------------------------------------------
+export const PROB_STOPS = ['#1e3a8a', '#64748b', '#f59e0b', '#ef4444']
+export const probColor = (p: number) => ramp(PROB_STOPS, p)
