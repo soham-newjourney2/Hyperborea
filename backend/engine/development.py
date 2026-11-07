@@ -83,7 +83,8 @@ def _downstream(ctx: FloodContext, d: str) -> list[str]:
     return path
 
 
-def assess(ctx: FloodContext, layers: dict[str, gpd.GeoDataFrame], presets: list[dict], params: dict) -> dict:
+def assess(ctx: FloodContext, layers: dict[str, gpd.GeoDataFrame], presets: list[dict], params: dict,
+           access=None) -> dict:
     nm = norms()
     ck = nm["checks"]
     use, floors = params["use"], int(params["floors"])
@@ -253,21 +254,40 @@ def assess(ctx: FloodContext, layers: dict[str, gpd.GeoDataFrame], presets: list
                                  "numbers": {"road_id": road_id, "class": road_cls, "flood_state": flooded},
                                  "threshold": f"≤ {ck['road_access']['max_distance_m']} m; local road + > 500 commercial occupants → conditional",
                                  "data_status": "observed", "source_ids": ["osm"]}
-    # Critical facilities (straight-line until P12)
-    if len(near) < 2:
+    # Critical facilities: free-flow drive time (P12) — straight-line fallback without the drive graph
+    lim = ck["facilities"]
+    if access is not None:
+        from .access import minutes_from, nearest_node
+        c4326 = gpd.GeoSeries([centre], crs=UTM).to_crs(4326).iloc[0]
+        node = nearest_node(access, c4326.x, c4326.y)
+        tmin = {t: minutes_from(access, access.baseline, cat, node) for t, cat in (("hospital", "hospital"), ("fire_station", "fire"))}
+        if any(v is None for v in tmin.values()):
+            checks["critical_facilities"] = {"status": "fail", "detail": "no drive route to a hospital or fire station",
+                                             "data_status": "modelled", "source_ids": ["osm"]}
+        else:
+            worst = max(tmin.values())
+            st = "pass" if worst <= lim["pass_within_min"] else "conditional" if worst <= lim["conditional_within_min"] else "fail"
+            to = {t: access.baseline[cat]["nodes"][node][1] for t, cat in (("hospital", "hospital"), ("fire_station", "fire"))}
+            names = {t: (access.facilities[f]["name"] or "(unnamed)") for t, f in to.items()}
+            checks["critical_facilities"] = {
+                "status": st, "value": round(worst, 1), "unit": "min drive (free-flow)",
+                "detail": f"hospital {names['hospital']} {tmin['hospital']:.1f} min; fire station {names['fire_station']} "
+                          f"{tmin['fire_station']:.1f} min",
+                "numbers": {"minutes": tmin, "to": to, "node": node, "straight_line_m": {k: v["distance_m"] for k, v in near.items()}},
+                "threshold": f"pass ≤ {lim['pass_within_min']} min, conditional ≤ {lim['conditional_within_min']} min",
+                "data_status": "modelled", "source_ids": ["osm"], "note": "free-flow travel time — not live traffic"}
+    elif len(near) < 2:
         checks["critical_facilities"] = {"status": "insufficient_data", "detail": "hospital or fire station not mapped nearby",
                                          "data_status": "unknown", "source_ids": ["osm"]}
     else:
         far = max(v["distance_m"] for v in near.values())
-        lim = ck["facilities"]
         st = "pass" if far <= lim["pass_within_m"] else "conditional" if far <= lim["conditional_within_m"] else "fail"
         checks["critical_facilities"] = {"status": st, "value": far, "unit": "m (straight line)",
                                          "detail": "; ".join(f"{t.replace('_', ' ')} {v['name'] or '(unnamed)'} {v['distance_m']:,} m"
                                                             for t, v in near.items()),
                                          "numbers": near, "threshold": f"pass ≤ {lim['pass_within_m']} m, conditional ≤ {lim['conditional_within_m']} m",
                                          "data_status": "observed", "source_ids": ["osm"],
-                                         "note": "straight-line distance; P12 replaces with road travel time"}
-    # Electrical / water: data gaps stated, demands still computed
+                                         "note": "straight-line distance (drive graph not loaded)"}
     # Electrical (P10, simulated network): nearest transformer headroom after the added kVA
     tl = layers.get("transformers")
     if tl is None or tl.empty:
@@ -352,7 +372,7 @@ def assess(ctx: FloodContext, layers: dict[str, gpd.GeoDataFrame], presets: list
             f"Site runoff C {c0} → {c1}; detention tank sized for no net increase in peak runoff "
             f"(≥ {nm['upgrades']['detention_peak_reduction']:.0%} cut, assumed).",
             "Drainage + flood use the simulated P06 network and the P08 engine under the chosen design preset.",
-            "Facility distances are straight-line until P12 routing.",
+            "Critical-facility check uses free-flow drive time on the OSM network (P12), not live traffic.",
             "Electrical headroom uses the SIMULATED P10 network (nearest transformer); real feeder data would replace it.",
         ],
     }

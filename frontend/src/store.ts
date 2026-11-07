@@ -4,7 +4,9 @@ import type { Asset, DevAssessment, FloodResult, LayerMeta, Region, Weather } fr
 export type Imagery = 'osm' | 'eox'
 export type ViewMode = '3d' | '2d'
 export type Quality = 'high' | 'standard'
-export type RightTab = 'inspector' | 'relations' | 'disaster' | 'develop' | 'weather'
+export type RightTab = 'inspector' | 'relations' | 'disaster' | 'develop' | 'access' | 'weather'
+export type AccessCat = 'hospital' | 'fire' | 'metro'
+export type AccessView = { cat: AccessCat; mode: 'baseline' | 'delta'; colors: Record<string, string> }
 export type LonLat = [number, number]
 export type FlyTarget = { lon: number; lat: number; ts: number }
 
@@ -39,6 +41,7 @@ interface AppState {
   drawPoints: LonLat[]
   drawn: LonLat[] | null
   overlays: { worldcover: boolean; ndvi: boolean }
+  accessView: AccessView | null
   setRegion: (r: Region) => void
   setLayers: (l: LayerMeta[]) => void
   toggle: (id: string) => void
@@ -59,6 +62,7 @@ interface AppState {
   finishDraw: () => void
   cancelDraw: () => void
   setOverlay: (k: 'worldcover' | 'ndvi', on: boolean) => void
+  setAccessView: (v: AccessView | null) => void
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -80,6 +84,7 @@ export const useApp = create<AppState>((set) => ({
   drawing: false,
   drawPoints: [],
   drawn: null,
+  accessView: null,
   overlays: (() => {
     const o = new URLSearchParams(window.location.search).get('overlay') // ?overlay=ndvi|worldcover
     return { worldcover: o === 'worldcover', ndvi: o === 'ndvi' }
@@ -125,6 +130,7 @@ export const useApp = create<AppState>((set) => ({
     }),
   cancelDraw: () => set({ drawing: false, drawPoints: [] }),
   // one overlay at a time (both are opaque-ish rasters over the same area)
+  setAccessView: (accessView) => set({ accessView }),
   setOverlay: (k, on) => set(() => ({ overlays: { worldcover: false, ndvi: false, [k]: on } })),
   setFlood: (flood) =>
     set((s) => ({

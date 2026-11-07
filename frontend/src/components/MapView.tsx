@@ -316,7 +316,8 @@ function repaint(index: Map<string, Entity>, L: Looks, selectedId: string | null
 }
 
 /** Scenario recolouring (P08): drains by load, roads by passability, catchments by ponding, exposed assets. */
-function applyScenario(index: Map<string, Entity>, L: Looks, flood: FloodResult | null) {
+function applyScenario(index: Map<string, Entity>, L: Looks, flood: FloodResult | null,
+  access: Record<string, string> | null = null) {
   const next = new Map<Entity, Look>()
   if (flood) {
     const dash = (c: string) => new PolylineDashMaterialProperty({ color: css(c), dashLength: 12 })
@@ -352,6 +353,12 @@ function applyScenario(index: Map<string, Entity>, L: Looks, flood: FloodResult 
       const e = index.get(id)
       if (e) next.set(e, { billColor: new ConstantProperty(css(f.state === 'access_cut' ? SCENARIO.facility_cut : SCENARIO.facility_impaired)),
         scale: new ConstantProperty(1.35) })
+    }
+  }
+  if (access) {  // P12 accessibility colouring wins on buildings
+    for (const [id, col] of Object.entries(access)) {
+      const e = index.get(id)
+      if (e) next.set(e, { ...next.get(e), polyMat: new ColorMaterialProperty(css(col)) })
     }
   }
   for (const e of [...L.scenario.keys()]) if (!next.has(e)) {
@@ -407,11 +414,11 @@ export default function MapView() {
   const tagRef = useRef<HTMLDivElement>(null)
   const anchorRef = useRef<Cartesian3 | null>(null)
   const { region, visible, imagery, view, quality, selectedId, selected, neighbourhood, flyTarget, flood, dev, drawing,
-    drawPoints, drawn, overlays, select, setSelected, setLoading } = useApp()
+    drawPoints, drawn, overlays, accessView, select, setSelected, setLoading } = useApp()
   const overlayLayers = useRef(new Map<string, ImageryLayer>())
   const refreshLooks = () => {
     const st = useApp.getState()
-    applyScenario(entityIndex.current, looks.current, st.flood)
+    applyScenario(entityIndex.current, looks.current, st.flood, st.accessView?.colors ?? null)
     repaint(entityIndex.current, looks.current, st.selectedId, st.neighbourhood, true)
     viewerRef.current?.scene.requestRender()
   }
@@ -605,10 +612,10 @@ export default function MapView() {
 
   // P08 scenario recolouring (layers it needs are switched on by the store).
   useEffect(() => {
-    applyScenario(entityIndex.current, looks.current, flood)
+    applyScenario(entityIndex.current, looks.current, flood, accessView?.colors ?? null)
     repaint(entityIndex.current, looks.current, useApp.getState().selectedId, useApp.getState().neighbourhood, true)
     viewerRef.current?.scene.requestRender()
-  }, [flood])
+  }, [flood, accessView])
 
   // P09 draw tool: live outline while drawing; pending footprint; assessed proposal extruded in purple (simulated).
   useEffect(() => {

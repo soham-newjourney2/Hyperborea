@@ -26,7 +26,8 @@ checks:
   electrical: {pass_max_loading: 0.8, conditional_max_loading: 1.0}   # transformer loading after added kVA  # fail only if the proposal itself tips a drain over 1.0
   flood: {conditional_from_m: 0.15, fail_from_m: 0.45}          # plinth 0.45 m (config/flood.yaml)
   road_access: {max_distance_m: 50}
-  facilities: {pass_within_m: 3000, conditional_within_m: 5000}  # straight-line; P12 replaces with travel time
+  facilities: {pass_within_m: 3000, conditional_within_m: 5000,   # straight-line fallback
+               pass_within_min: 8, conditional_within_min: 15}    # free-flow drive time (P12, assumed)
   landuse_compatible:
     residential: [residential, mixed, construction, grass]
     commercial: [commercial, retail, industrial, construction, mixed]

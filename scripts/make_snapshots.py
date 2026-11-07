@@ -34,7 +34,7 @@ def main(base: str = "http://127.0.0.1:8000/api") -> None:
         files[f"layer_{lid}{'_pilot' if pilot else ''}.json"] = r.content
 
     for path in ("weather/current", "weather/forecast", "climate/summary", "scenarios/presets",
-                 "environment/air", "environment/water", "environment/landcover"):
+                 "environment/air", "environment/water", "environment/landcover", "access/summary"):
         files[path.replace("/", "_") + ".json"] = c.get(f"/{path}").raise_for_status().content
     # P08 fixed demo results (UI fallback + expected-output test).
     for preset in ("heavy", "extreme"):

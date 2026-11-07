@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from ...engine.development import assess, what_changed
 from ..services.layer_store import get_store
+from .access import get_access
 from .scenarios import flood_context
 from .weather import presets_data
 
@@ -32,7 +33,7 @@ def _run(req: AssessRequest) -> dict:
     store = get_store()
     layers = {k: v.gdf for k, v in store.layers.items()}
     try:
-        res = assess(flood_context(), layers, presets_data(), req.model_dump())
+        res = assess(flood_context(), layers, presets_data(), req.model_dump(), access=get_access())
     except KeyError as e:
         raise HTTPException(404, f"Unknown site or preset {e}") from e
     except ValueError as e:

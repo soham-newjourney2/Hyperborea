@@ -114,3 +114,10 @@ export const LOADING_STOPS: [number, string, string][] = [
 export const loadingColor = (pct: number) => LOADING_STOPS.find(([lim]) => pct < lim)![1]
 export const FEEDER_COLOR = '#facc15'
 export const SCENARIO_POWER = { transformer_shutdown: '#ef4444', building_no_power: '#1e293b' }
+
+// ---- P12 accessibility (sequential: longer = brighter/warmer; isolated = distinct magenta + label) -------
+export const ACCESS_STOPS = ['#1e3a8a', '#0ea5e9', '#fde047', '#f97316', '#dc2626']
+export const DELTA_STOPS = ['#334155', '#f59e0b', '#ef4444', '#991b1b']
+export const ACCESS_ISOLATED = '#d946ef'
+export const accessColor = (t: number) => ramp(ACCESS_STOPS, t)
+export const deltaColor = (t: number) => ramp(DELTA_STOPS, t)

@@ -4,8 +4,10 @@ from functools import lru_cache
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from ...engine.access import road_block_step
 from ...engine.flood import FloodContext, ResultCache, build_context
 from ..services.layer_store import get_store
+from .access import get_access, scenario_for
 from .graph import get_graph
 from .weather import presets_data
 
@@ -51,6 +53,23 @@ def resolve(req: FloodRequest) -> dict:
     return p
 
 
+def attach_access(res: dict) -> dict:
+    """P12: add the accessibility impact + an access hop to impassable-road Why? chains (once per result)."""
+    if "access" in res or get_access() is None:
+        return res
+    sc = scenario_for(res)
+    h = sc["categories"]["hospital"]
+    res["access"] = {k: v for k, v in sc.items() if k != "scenario"}
+    res["summary"].update(buildings_hospital_slower=h["buildings_slower"], buildings_hospital_isolated=h["newly_isolated"],
+                          hospital_mean_delta_min=h["mean_delta_min"], hospital_max_delta_min=h["max_delta_min"])
+    for rid, r in res["layers"]["roads"].items():
+        if r["state"] == "impassable" and rid in res["explanations"]:
+            step = road_block_step(get_access(), rid, sc["scenario"])
+            if step:
+                res["explanations"][rid]["path"].append(step)
+    return res
+
+
 @router.post("/scenarios/flood")
 def scenario_flood(req: FloodRequest) -> dict:
-    return _cache.get_or_run(flood_context(), resolve(req))
+    return attach_access(_cache.get_or_run(flood_context(), resolve(req)))

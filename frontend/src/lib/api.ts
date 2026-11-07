@@ -11,7 +11,7 @@ export function apiUrl(path: string, base: string = API_URL): string {
 }
 
 const SNAPSHOT_PATHS = new Set(['weather/current', 'weather/forecast', 'climate/summary', 'scenarios/presets',
-  'environment/air', 'environment/water', 'environment/landcover'])
+  'environment/air', 'environment/water', 'environment/landcover', 'access/summary'])
 
 /** API path → snapshot file name (must match scripts/make_snapshots.py); null = not snapshotted. */
 export function snapshotName(path: string): string | null {
@@ -387,6 +387,10 @@ export interface FloodSummary {
   transformers_shutdown?: number
   buildings_power_loss?: number
   facilities_power_loss?: number
+  buildings_hospital_slower?: number
+  buildings_hospital_isolated?: number
+  hospital_mean_delta_min?: number
+  hospital_max_delta_min?: number
 }
 export interface FloodResult {
   result_id: string
@@ -551,3 +555,27 @@ export function getLandcover(signal?: AbortSignal): Promise<Landcover> {
   })
   return landcoverPromise
 }
+
+// ---- P12 accessibility -------------------------------------------------------------------------------
+export interface AccessStats { n: number; isolated: number; median_min: number | null; p90_min: number | null; max_min: number | null }
+export interface AccessCategory {
+  stats?: AccessStats
+  baseline?: AccessStats
+  scenario?: AccessStats
+  newly_isolated?: number
+  buildings_slower?: number
+  mean_delta_min?: number
+  max_delta_min?: number
+  minutes: Record<string, number | null>
+  delta?: Record<string, number | null>
+}
+export interface AccessSummary {
+  label: string
+  data_status: string
+  source_id: string
+  result_id: string | null
+  categories: Record<'hospital' | 'fire' | 'metro', AccessCategory>
+  facilities_no_hospital_route?: { asset_id: string; name: string | null; type: string }[]
+}
+export const getAccessSummary = (resultId?: string, signal?: AbortSignal) =>
+  getJson<AccessSummary>(`access/summary${resultId ? `?result_id=${encodeURIComponent(resultId)}` : ''}`, signal, LAYER_TIMEOUT_MS)

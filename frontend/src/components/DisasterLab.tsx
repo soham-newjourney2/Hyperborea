@@ -209,6 +209,10 @@ export default function DisasterLab() {
             <Tile label="Facilities affected" value={s.facilities_affected} sub={`${s.facilities_power_loss ?? 0} power lost · ${s.facilities_access_impaired} access impaired`} tone={SCENARIO.facility_impaired} />
             <Tile label="Transformers shut down" value={s.transformers_shutdown ?? 0} sub="simulated network, plinth 0.6 m" tone={SCENARIO.road_impassable} />
             <Tile label="Buildings without power" value={s.buildings_power_loss ?? 0} sub="supplied by a flooded transformer" tone="#64748b" />
+            {s.buildings_hospital_slower !== undefined && (
+              <Tile label="Hospital access" value={`+${s.hospital_mean_delta_min ?? 0} min`}
+                sub={`${s.buildings_hospital_slower} slower · ${s.buildings_hospital_isolated} isolated (free-flow)`} tone="#d946ef" />
+            )}
           </div>
 
           {ex && <Why ex={ex} />}

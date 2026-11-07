@@ -11,6 +11,7 @@ const EnvironmentPanel = lazy(() => import('./components/EnvironmentPanel'))
 const RelationshipExplorer = lazy(() => import('./components/RelationshipExplorer'))
 const DisasterLab = lazy(() => import('./components/DisasterLab'))
 const DevelopmentPanel = lazy(() => import('./components/DevelopmentPanel'))
+const AccessPanel = lazy(() => import('./components/AccessPanel'))
 
 type ApiState = { kind: 'checking' } | { kind: 'ok'; health: Health } | { kind: 'offline' }
 
@@ -75,10 +76,11 @@ function useBootstrap(ok: boolean) {
         const deepLink = q.get('asset') // ?asset=<asset_id>
         if (deepLink) useApp.getState().select(deepLink)
         const tabQ = q.get('tab') // ?tab=weather|relations
-        if (tabQ === 'weather' || tabQ === 'relations' || tabQ === 'disaster' || tabQ === 'develop') useApp.getState().setRightTab(tabQ)
+        if (tabQ === 'weather' || tabQ === 'relations' || tabQ === 'disaster' || tabQ === 'develop' || tabQ === 'access')
+          useApp.getState().setRightTab(tabQ)
         const scen = q.get('scenario') // ?scenario=extreme → run preset on load (demo links)
         if (scen) {
-          useApp.getState().setRightTab('disaster')
+          if (!tabQ) useApp.getState().setRightTab('disaster')
           runFlood({ preset: scen }).then((f) => useApp.getState().setFlood(f)).catch(() => {})
         }
         for (const tok of (q.get('layers') ?? '').split(',').filter(Boolean)) { // ?layers=drains,-roads
@@ -122,7 +124,7 @@ function WeatherChip() {
 
 function Tabs() {
   const { rightTab, setRightTab } = useApp()
-  const tab = (id: 'inspector' | 'relations' | 'disaster' | 'develop' | 'weather', label: string) => (
+  const tab = (id: 'inspector' | 'relations' | 'disaster' | 'develop' | 'access' | 'weather', label: string) => (
     <button
       onClick={() => setRightTab(id)}
       className={`flex-1 border-b-2 px-1 py-2 text-[10px] font-semibold uppercase tracking-wider ${
@@ -134,11 +136,12 @@ function Tabs() {
   )
   return (
     <div className="sticky top-0 z-10 flex border-b border-slate-800 bg-slate-950">
-      {tab('inspector', 'Inspector')}
-      {tab('relations', 'Relations')}
+      {tab('inspector', 'Inspect')}
+      {tab('relations', 'Graph')}
       {tab('disaster', 'Disaster')}
       {tab('develop', 'Develop')}
-      {tab('weather', 'Environment')}
+      {tab('access', 'Access')}
+      {tab('weather', 'Env')}
     </div>
   )
 }
@@ -197,7 +200,7 @@ export default function App() {
               <AssetInspector />
             ) : (
               <Suspense fallback={<p className="text-xs text-slate-500">Loading…</p>}>
-                {rightTab === 'relations' ? <RelationshipExplorer /> : rightTab === 'disaster' ? <DisasterLab /> : rightTab === 'develop' ? <DevelopmentPanel /> : <EnvironmentPanel />}
+                {rightTab === 'relations' ? <RelationshipExplorer /> : rightTab === 'disaster' ? <DisasterLab /> : rightTab === 'develop' ? <DevelopmentPanel /> : rightTab === 'access' ? <AccessPanel /> : <EnvironmentPanel />}
               </Suspense>
             )}
           </div>
