@@ -28,9 +28,9 @@ node --version         # v26.x
 
 ```powershell
 git lfs install                        # once per machine: enables Git LFS hooks for your user
-git clone https://github.com/soham-newjourney2/hyperborea.git
+git clone https://github.com/soham-newjourney2/1.hyperborea.git hyperborea   # repo was renamed to 1.hyperborea
 cd hyperborea
-git lfs pull                           # downloads ~1.2 GB of LFS files (OSM extracts, rasters, raw OSM)
+git lfs pull                           # downloads ~1.5 GB of LFS files (5 cities: OSM extracts, rasters, raw OSM)
 ```
 
 > If PowerShell blocks scripts (`running scripts is disabled`), allow them for your user once:
