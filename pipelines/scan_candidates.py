@@ -16,6 +16,7 @@ from shapely.geometry import box
 from shapely.ops import polygonize, unary_union
 
 from pipelines.osm_common import ROOT, overpass
+from backend.app.core import regions as R  # noqa: E402
 
 UTM = 32645
 # Block membership from the Salt Lake block grid, checked against the OSM "Sector III"
@@ -116,7 +117,7 @@ def main() -> None:
 
     table = pd.DataFrame(rows)
     print(table.to_string(index=False))
-    out = ROOT / "data" / "curated" / "candidates.geojson"
+    out = R.data_dir("curated", "sector_v") / "candidates.geojson"
     out.parent.mkdir(parents=True, exist_ok=True)
     gpd.GeoDataFrame(table.assign(data_status="curated", source_id="osm"), geometry=geoms, crs=4326).to_file(
         out, driver="GeoJSON")

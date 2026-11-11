@@ -2,7 +2,7 @@
 
 ## Every session
 1. Read `planning.md` (start at §10 Status) and **only** the current `phases/Pxx.md`.
-2. Don't read `docs/VISION.md`, `data/raw/**`, `local/**`, `.venv/**`, `node_modules/**` unless the phase file says so.
+2. Don't read `docs/VISION.md`, `data/regions/*/raw/**`, `local/**`, `.venv/**`, `node_modules/**` unless the phase file says so.
 3. For library/API docs use the **Context7 MCP** (`use context7`) before any web search.
 4. In every new shell: `. .\scripts\env.ps1` (sets cache paths into `local/`, activates `.venv`).
 

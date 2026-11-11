@@ -140,9 +140,9 @@ Processed data is already in the repo. Each region is built by the same pipeline
 .\scripts\build_region.ps1 -Region pune_kharadi -From build_power  # resume from a step after a failure
 
 # Sector V (default region) step by step
-python -m pipelines.fetch_osm          # OSM from the Geofabrik extract in local/osm (downloads it if missing)
-python -m pipelines.normalize_osm      # → data/processed/hyperborea.gpkg
-python -m pipelines.fetch_dem          # Copernicus DEM 30 m (Planetary Computer) → local/rasters/dem.tif
+python -m pipelines.fetch_osm          # OSM from the region's extract in local/regions/<id>/osm (downloads it if missing)
+python -m pipelines.normalize_osm      # → data/regions/<id>/processed/hyperborea.gpkg
+python -m pipelines.fetch_dem          # Copernicus DEM 30 m (EA LiDAR for London) → local/regions/<id>/rasters/dem.tif
 python -m pipelines.build_drainage     # simulated drains, manholes, outfalls, catchments
 python -m pipelines.build_power        # simulated transformers + feeders
 python -m pipelines.make_water_demo    # DEMO water-quality points (labelled simulated)
@@ -159,7 +159,7 @@ $env:HYPERBOREA_REGION='chennai_velachery'; python scripts/make_snapshots.py; Re
 ```
 
 Downloads during rebuilds: Geofabrik OSM extracts (eastern 248 MB, southern 559 MB, western 222 MB — already in
-`local/osm` via LFS), Copernicus DEM, ESA WorldCover and Sentinel-2 tiles (Microsoft Planetary Computer, no account
+`local/regions/<id>/osm` via LFS), Copernicus DEM, ESA WorldCover and Sentinel-2 tiles (Microsoft Planetary Computer, no account
 needed), ERA5/forecast/CAMS air quality (Open-Meteo, no key). Licences: `docs/DATA_SOURCES.md`.
 
 ---
@@ -181,7 +181,7 @@ Details: `docs/DEPLOY.md`.
 | Symptom | Fix |
 |---|---|
 | `running scripts is disabled` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
-| Files in `local/osm` are tiny text files | LFS not pulled: `git lfs install; git lfs pull` |
+| Files in `local/regions/*/osm` are tiny text files | LFS not pulled: `git lfs install; git lfs pull` |
 | `No .venv yet` from env.ps1 | run step 3a |
 | Login says "Wrong password" | `ADMIN_PASSWORD` in `.env` differs from the one you typed; restart the API after editing `.env` |
 | "Error in sys.excepthook" lines after a pipeline | harmless GDAL shutdown noise in PowerShell 5.1 (exit code is 0) |

@@ -7,11 +7,11 @@ from fastapi import APIRouter, HTTPException, Query
 from ...engine import surrogate as sg
 from ...engine.flood import run_flood
 from ..core.paths import ROOT
-from ..core.regions import data_dir
+from ..core.regions import data_dir, model_dir
 from .scenarios import flood_context
 
 router = APIRouter()
-CARDS = ROOT / "models" / "model_cards"
+SHARED_CARDS = ROOT / "models" / "model_cards"  # region-agnostic cards (LLM explainer)
 
 
 @router.get("/ml/quickscan")
@@ -38,7 +38,7 @@ def models() -> list[dict]:
     out = []
     for mid, title, mfile in (("ml_surrogate", "Flood surrogate (HistGradientBoosting)", sg.metrics_path()),
                               ("cv_water", "Surface water — NDWI spectral index (not ML)", data_dir() / "cv_water_summary.json")):
-        card = CARDS / f"{'surrogate' if mid == 'ml_surrogate' else 'cv_water'}.md"
+        card = model_dir() / "model_cards" / f"{'surrogate' if mid == 'ml_surrogate' else 'cv_water'}.md"
         out.append({"id": mid, "title": title, "available": card.exists(),
                     "card_markdown": card.read_text(encoding="utf-8") if card.exists() else None,
                     "metrics": json.loads(mfile.read_text(encoding="utf-8")) if mfile.exists() else None})

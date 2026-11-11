@@ -1,13 +1,13 @@
 import { AUTH_EVENT, AuthError, currentToken } from './auth'
-import { isDefaultRegion, REGION, withRegion } from './region'
+import { REGION, withRegion } from './region'
 
 // API client. Base URL from VITE_API_URL (planning §8).
 // Offline fallback (P04): any request that fails or takes > 5 s is served from public/snapshots/*.json
 // (made by scripts/make_snapshots.py) and the app shows an "Offline snapshot" badge.
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000/api'
 const SNAPSHOT_ROOT = `${import.meta.env.BASE_URL ?? '/'}snapshots/`
-// P16: non-default regions keep their snapshots in snapshots/regions/<id>/ (scripts/make_snapshots.py)
-const SNAPSHOT_BASE = isDefaultRegion() ? SNAPSHOT_ROOT : `${SNAPSHOT_ROOT}regions/${REGION}/`
+// Every region keeps its snapshots in snapshots/regions/<id>/ (scripts/make_snapshots.py); regions.json at the root
+const SNAPSHOT_BASE = `${SNAPSHOT_ROOT}regions/${REGION}/`
 const TIMEOUT_MS = 5000
 const LAYER_TIMEOUT_MS = 20000 // big GeoJSON from a cold-started Space can legitimately take > 5 s
 
@@ -242,7 +242,7 @@ export interface ClimateSummary {
   label: string
   grid: { lat: number; lon: number; resolution: string }
   period: { start: string; end: string; full_years: [number, number]; n_years: number }
-  thresholds_mm_day: { heavy: number; very_heavy: number; extremely_heavy: number }
+  thresholds_mm_day: { heavy: number; very_heavy: number; extremely_heavy: number ; label?: string}
   stats: {
     annual_total_mean_mm: number
     jjas_share_pct: number
@@ -540,6 +540,10 @@ export interface AirQuality {
   means_ugm3: Record<string, number | null>
   sub_index: Record<string, number | null>
   naqi: number | null
+  aqi?: number | null // P18: value in the region's index scheme
+  index?: { id: string; name: string; scale: string; source: string }
+  timezone?: string
+  pm25_bands?: [number, number, string, string][]
   dominant: string | null
   category: string | null
   color: string | null

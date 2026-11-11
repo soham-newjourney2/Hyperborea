@@ -1,6 +1,6 @@
 """P11: ESA WorldCover 2021 class shares + Sentinel-2 dry-season NDVI for the pilot and each catchment.
 
-Out: data/processed/landcover_stats.json, frontend/public/overlays/{worldcover,ndvi}.png (EPSG:4326, bounds in stats).
+Out: data/regions/<id>/processed/landcover_stats.json, frontend/public/overlays/regions/<id>/{worldcover,ndvi}.png (EPSG:4326, bounds in stats).
 Run after build_drainage:  python -m pipelines.landcover
 """
 from __future__ import annotations
@@ -25,7 +25,7 @@ from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION
 STAC = "https://planetarycomputer.microsoft.com/api/stac/v1"
 BUFFER_M = 300
 OUT_JSON = R.data_dir("processed") / "landcover_stats.json"
-OVERLAY_REL = "overlays" if R.current() == R.DEFAULT else f"overlays/regions/{R.current()}"  # P17: per-region PNGs
+OVERLAY_REL = f"overlays/regions/{R.current()}"  # per-region PNGs (frontend/public/overlays/regions/<id>)
 OVERLAYS = ROOT / "frontend" / "public" / OVERLAY_REL
 WC_CLASSES = {  # code: (label, official colour)
     10: ("Tree cover", "#006400"), 20: ("Shrubland", "#ffbb22"), 30: ("Grassland", "#ffff4c"),

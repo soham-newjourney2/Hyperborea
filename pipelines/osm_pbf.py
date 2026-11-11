@@ -19,7 +19,7 @@ from pipelines.osm_common import ROOT
 
 # P16: per-region Geofabrik extract (config/regions.yaml `osm_pbf`); Sector V = eastern-zone 2026-11-05
 PBF_URL = R.cfg().get("osm_pbf", "https://download.geofabrik.de/asia/india/eastern-zone-261104.osm.pbf")
-PBF_DIR = ROOT / "local" / "osm"
+PBF_DIR = R.local_dir("osm")  # local/regions/<id>/osm
 KEYS = ("building", "highway", "amenity", "railway", "station", "power", "waterway", "natural", "landuse",
         "public_transport", "subway")
 UA = {"User-Agent": "Hyperborea/0.1 (hackathon research pipeline)"}

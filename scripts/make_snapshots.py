@@ -1,7 +1,7 @@
 """P04: freeze API responses into frontend/public/snapshots/ for the offline fallback.
 
 Run with the API up:  python scripts/make_snapshots.py [api_base]   (default http://127.0.0.1:8000/api)
-P16: region from HYPERBOREA_REGION (default sector_v → snapshots/; others → snapshots/regions/<id>/).
+Region from HYPERBOREA_REGION (default sector_v) → frontend/public/snapshots/regions/<id>/ (+ snapshots/regions.json).
 File names must match `snapshotName()` in frontend/src/lib/api.ts. Regenerate at the end of every phase.
 """
 import json
@@ -18,7 +18,7 @@ from backend.app.core import regions as R  # noqa: E402
 from backend.app.core.config import get_settings  # noqa: E402  (admin password from .env)
 SNAP_ROOT = ROOT / "frontend" / "public" / "snapshots"
 RID = R.current()
-OUT = SNAP_ROOT if RID == R.DEFAULT else SNAP_ROOT / "regions" / RID
+OUT = SNAP_ROOT / "regions" / RID
 DATA_SNAP = R.data_dir("snapshots")
 # Same extents the map requests (MapView FULL_EXTENT): these two in full, the rest pilot-only.
 FULL_EXTENT = {"facilities", "boundary", "drains", "drain_nodes", "outfalls", "catchments", "sites",
@@ -73,7 +73,7 @@ def main(base: str = "http://127.0.0.1:8000/api") -> None:
     reg = c.get("/regions").raise_for_status().json()
     have = {RID} | {p.name for p in (SNAP_ROOT / "regions").glob("*") if (p / "health.json").exists()}
     for r in reg["regions"]:
-        r["status"] = "ready" if r["id"] in have or (r["default"] and (SNAP_ROOT / "health.json").exists()) else "no-data"
+        r["status"] = "ready" if r["id"] in have else "no-data"
     SNAP_ROOT.mkdir(parents=True, exist_ok=True)
     (SNAP_ROOT / "regions.json").write_text(json.dumps(reg), encoding="utf-8")
     OUT.mkdir(parents=True, exist_ok=True)

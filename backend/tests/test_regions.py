@@ -30,8 +30,8 @@ def test_registry_valid():
 
 
 def test_data_dirs():
-    assert R.data_dir("processed", "sector_v") == DATA / "processed"  # default keeps the old layout
-    assert R.data_dir("curated", "pune_kharadi") == DATA / "curated" / "regions" / "pune_kharadi"
+    assert R.data_dir("processed", "sector_v") == DATA / "regions" / "sector_v" / "processed"  # one folder per region
+    assert R.data_dir("curated", "pune_kharadi") == DATA / "regions" / "pune_kharadi" / "curated"
     assert R.metric_crs("sector_v") == 32645
 
 

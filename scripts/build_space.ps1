@@ -8,11 +8,12 @@ New-Item -ItemType Directory -Force $out | Out-Null
 Copy-Item (Join-Path $root 'backend\Dockerfile') $out
 # backend code (no tests, no caches)
 robocopy (Join-Path $root 'backend') (Join-Path $out 'backend') /E /XD tests __pycache__ .pytest_cache /XF Dockerfile *.pyc /NFL /NDL /NJH /NJS /NP | Out-Null
-# small data the API serves (raw/ never ships)
-foreach ($d in 'processed', 'curated', 'synthetic', 'snapshots') {
-  $src = Join-Path $root "data\$d"
-  if (Test-Path $src) { robocopy $src (Join-Path $out "data\$d") /E /NFL /NDL /NJH /NJS /NP | Out-Null }
-  else { New-Item -ItemType Directory -Force (Join-Path $out "data\$d") | Out-Null }
+# small data the API serves, per region (raw/ never ships): data/regions/<id>/{processed,curated,synthetic,snapshots}
+Get-ChildItem (Join-Path $root 'data\regions') -Directory | ForEach-Object {
+  foreach ($d in 'processed', 'curated', 'synthetic', 'snapshots') {
+    $src = Join-Path $_.FullName $d
+    if (Test-Path $src) { robocopy $src (Join-Path $out "data\regions\$($_.Name)\$d") /E /NFL /NDL /NJH /NJS /NP | Out-Null }
+  }
 }
 $cfg = Join-Path $root 'config'
 if (Test-Path $cfg) { robocopy $cfg (Join-Path $out 'config') /E /NFL /NDL /NJH /NJS /NP | Out-Null }

@@ -39,6 +39,7 @@ DIAMETER_M = {"trunk": 1.2, "primary": 1.2, "secondary": 1.2, "tertiary": 0.9}  
 # D-20: size each drain for a design storm on everything upstream (rational method), standard pipe sizes.
 DESIGN_RAIN_MM_H = float(R.cfg()["design_storm_mm_h"])  # assumed design intensity (D-20; Sector V 20 mm/h, local standard unknown)
 PLACE = "Salt Lake" if R.current() == R.DEFAULT else R.cfg()["name"]
+DEM_NAME = "EA LiDAR DTM (5 m)" if R.cfg().get("dem") == "ea_lidar_dtm" else "Copernicus DEM"
 ROAD_HALF_WIDTH_M = {"trunk": 7.0, "primary": 7.0, "secondary": 5.5, "tertiary": 4.0}  # else 3.0
 RUNOFF_C = {"roof": 0.90, "road": 0.85, "other": 0.40}
 
@@ -285,7 +286,7 @@ def main() -> None:
         "dist_to_outfall_m": round(float(dist[n]), 1), "drains_via": tree_seg.get(n) or out_id.get(n),
         "is_outfall": n in out_nodes, "n_out_segments": int(down_count.get(n, 0))}} for n, r in nodes.iterrows()]
     drain_nodes = frame(node_rows, [Point(r.x_utm, r.y_utm) for r in nodes.itertuples()], "manhole", "simulated",
-                        "syn_drain", "Simulated junction at each road node; ground level from Copernicus DEM "
+                        "syn_drain", f"Simulated junction at each road node; ground level from {DEM_NAME} "
                         "(surface model, 3×3 minimum as ground proxy, ~2–4 m vertical error)", "low")
 
     of_rows = [{"asset_id": out_id[o["node"]], "name": f"Outfall → {o['canal_name'] or 'unnamed ' + o['receiving_kind']}", "attrs": {

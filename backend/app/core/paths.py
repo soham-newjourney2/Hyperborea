@@ -5,9 +5,10 @@ from pathlib import Path
 ROOT = Path(os.environ.get("HYPERBOREA_ROOT", Path(__file__).resolve().parents[3]))
 LOCAL = ROOT / "local"
 DATA = ROOT / "data"
-PROCESSED = DATA / "processed"
+# Default region (Sector V) folders — kept for tests/tools; region-aware code uses core.regions.data_dir()
+PROCESSED = DATA / "regions" / "sector_v" / "processed"
 GPKG = PROCESSED / "hyperborea.gpkg"
-SNAPSHOTS = DATA / "snapshots"
+SNAPSHOTS = DATA / "regions" / "sector_v" / "snapshots"
 CONFIG = ROOT / "config"
 
 _CACHE_DEFAULTS = {

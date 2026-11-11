@@ -56,24 +56,24 @@ def metric_crs(region_id: str | None = None) -> int:
     return int(cfg(region_id)["metric_crs"])
 
 
-def _scoped(base: Path, kind: str, region_id: str | None) -> Path:
-    rid = region_id or current()
-    return base / kind if rid == DEFAULT else base / kind / "regions" / rid
+def region_root(region_id: str | None = None) -> Path:
+    """data/regions/<id> — every region (Sector V included) has its own folder (layout of 2026-11-11)."""
+    return DATA / "regions" / (region_id or current())
 
 
 def data_dir(kind: str = "processed", region_id: str | None = None) -> Path:
-    """data/<kind> for the default region, data/<kind>/regions/<id> otherwise (processed, curated, synthetic, raw, snapshots)."""
-    return _scoped(DATA, kind, region_id)
+    """data/regions/<id>/<kind> — kind: raw, processed, curated, synthetic, snapshots."""
+    return region_root(region_id) / kind
 
 
 def local_dir(kind: str, region_id: str | None = None) -> Path:
-    """local/<kind>[/regions/<id>] — rasters, cache."""
-    return _scoped(LOCAL, kind, region_id)
+    """local/regions/<id>/<kind> — osm (Geofabrik extract), rasters (DEM), cache (weather/air)."""
+    return LOCAL / "regions" / (region_id or current()) / kind
 
 
 def model_dir(region_id: str | None = None) -> Path:
-    rid = region_id or current()
-    return ROOT / "models" if rid == DEFAULT else ROOT / "models" / "regions" / rid
+    """models/regions/<id> — surrogate + metrics + model cards of that region."""
+    return ROOT / "models" / "regions" / (region_id or current())
 
 
 def is_ready(region_id: str) -> bool:

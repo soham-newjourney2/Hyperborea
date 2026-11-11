@@ -17,6 +17,7 @@ node_modules/
 
 # ---- rebuildable caches inside local/ (D-05) ----
 local/cache/
+local/regions/*/cache/
 local/hf/
 local/torch/
 local/*.log
