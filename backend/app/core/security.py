@@ -48,7 +48,12 @@ def create_token(role: str = "admin") -> tuple[str, datetime]:
     return token, exp
 
 
+OPEN = {"sub": "public", "role": "admin", "auth": "disabled"}
+
+
 def require_admin(cred: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> dict:
+    if not get_settings().auth_required:  # P20 (D-24): open access unless AUTH_REQUIRED=true
+        return OPEN
     if cred is None or cred.scheme.lower() != "bearer":
         raise HTTPException(401, "Login required", headers={"WWW-Authenticate": "Bearer"})
     try:

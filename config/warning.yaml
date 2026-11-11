@@ -1,0 +1,12 @@
+# P21 early-warning rules (assumed, shown in the UI). Forecast-driven estimate — not an official warning.
+min_rain_mm_h: 2.0          # below this the hour is treated as dry (no surrogate call)
+windows_h: [1, 2, 3]        # rolling windows searched for the worst burst (mean intensity × duration)
+probability_floor_pct: 30   # hours with precipitation probability below this are shown but flagged "unlikely"
+levels:                     # first matching level from the top wins
+  warning:
+    drains_overloaded_pct: 10      # % of all drains overloaded in the worst window
+    buildings_hospital_isolated: 1 # any building loses its hospital route
+    facilities_affected: 1         # any critical facility loses power / access
+  watch:
+    drains_overloaded_pct: 3
+    road_km_impassable: 0.1

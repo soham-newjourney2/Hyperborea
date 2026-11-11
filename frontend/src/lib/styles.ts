@@ -125,3 +125,10 @@ export const deltaColor = (t: number) => ramp(DELTA_STOPS, t)
 // ---- P13 quick-scan probability (sequential) -----------------------------------------------------------
 export const PROB_STOPS = ['#1e3a8a', '#64748b', '#f59e0b', '#ef4444']
 export const probColor = (p: number) => ramp(PROB_STOPS, p)
+
+// P21 early-warning level styles (banner + outlook card)
+export const LEVEL_STYLE: Record<string, { text: string; box: string; label: string }> = {
+  none: { text: 'text-emerald-300', box: 'border-emerald-500/40 bg-emerald-500/10', label: 'No flood risk' },
+  watch: { text: 'text-amber-200', box: 'border-amber-500/60 bg-amber-500/10', label: 'Flood watch' },
+  warning: { text: 'text-red-200', box: 'border-red-500/70 bg-red-500/15', label: 'Flood warning' },
+}

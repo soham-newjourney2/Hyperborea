@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore")
 
     cors_origins: str = "http://localhost:5173"
+    auth_required: bool = False  # P20 (D-24): open access by default; true = P15 admin JWT login
     admin_password: str = "change-me"
     jwt_secret: str = "change-me-long-random"
     explainer: str = "template"

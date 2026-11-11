@@ -1,4 +1,4 @@
-"""P15: no token → 401, wrong password → 401, token → 200; health + login stay public."""
+"""P15 guard with AUTH_REQUIRED=true: no token → 401, wrong password → 401, token → 200. P20: open by default."""
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -11,6 +11,18 @@ from backend.app.main import app
 
 pytestmark = pytest.mark.real_auth
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _auth_on(request, monkeypatch):
+    if "open_access" not in request.node.name:
+        monkeypatch.setattr(get_settings(), "auth_required", True)
+
+
+def test_open_access_by_default():
+    assert get_settings().auth_required is False
+    assert client.get("/api/health").json()["auth_required"] is False
+    assert client.get("/api/layers").status_code == 200  # no token needed
 
 
 def test_public_endpoints():
