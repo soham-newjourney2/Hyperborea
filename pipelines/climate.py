@@ -14,7 +14,6 @@ import httpx
 import pandas as pd
 from scipy import stats
 
-from pipelines.osm_common import ROOT
 from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 URL = "https://archive-api.open-meteo.com/v1/archive"

@@ -12,7 +12,6 @@ from datetime import datetime, timezone
 import geopandas as gpd
 import osmnx as ox
 
-from pipelines.osm_common import ROOT
 from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 OUT = R.data_dir("processed") / "drive_graph.json"

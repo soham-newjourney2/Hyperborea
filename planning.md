@@ -176,6 +176,11 @@ Status values: `todo` → `in-progress` → `built` (code + tests pass) → **`d
 | P17 | Chennai (Velachery) + Pune (Kharadi) | post-qual | built | |
 | P18 | London (Hackney Wick / Stratford) | post-qual | built | |
 | P19 | Sydney (Green Square) + multi-region demo pack | post-qual | in-progress | |
+| P20 | Open access (no login, auth off by default) | add-ons | built | |
+| P21 | Live early warning (72 h forecast → cascade) | add-ons | built | |
+| P22 | Validation vs real flood (Chennai 2015, Sentinel-1) | add-ons | built | |
+| P23 | Upgrade optimiser (risk removed per budget) | add-ons | built | |
+| P24 | Ask-the-twin chat (grounded local LLM) | add-ons | built | |
 
 **Thu 12 Nov:** submission + presentation. **13–15 Nov:** buffer before official deadline.
 

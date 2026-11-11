@@ -6,7 +6,6 @@ labelled simulated/curated · simulated/modelled features state assumptions. Rep
 no obvious secrets tracked, committed data/model files < 5 MB.
 Run:  python scripts/audit_data.py
 """
-import json
 import re
 import subprocess
 import sys
@@ -20,14 +19,17 @@ from backend.app.core import regions as R  # noqa: E402
 from backend.app.core.provenance import DataStatus  # noqa: E402
 from backend.app.services.layer_store import LayerStore  # noqa: E402
 
-OUT = ROOT / "docs" / "DATA_AUDIT.md"
+OUT = ROOT / "docs" / "DATA_AUDIT.md"  # written locally (docs/ is git-ignored)
 MUST_BE_SIMULATED = {"drains", "drain_nodes", "catchments", "transformers", "feeders", "water_quality"}
 SECRET = re.compile(r"(hf_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|"
                     r"-----BEGIN (?:RSA |EC )?PRIVATE KEY-----)")
 
 
 def main() -> int:
-    sources = set(re.findall(r"^### (\S+)", (ROOT / "docs" / "DATA_SOURCES.md").read_text(encoding="utf-8"), re.M))
+    reg = ROOT / "docs" / "DATA_SOURCES.md"  # docs/ is local-only (not in the repo): skip that check if absent
+    sources = set(re.findall(r"^### (\S+)", reg.read_text(encoding="utf-8"), re.M)) if reg.exists() else None
+    if sources is None:
+        print("note: docs/DATA_SOURCES.md not found — source_id registration not checked")
     valid = {s.value for s in DataStatus}
     rows, fails = [], []
     ready = [rid for rid in R.registry() if R.is_ready(rid)]
@@ -57,7 +59,7 @@ def _audit_region(rid, store, sources, valid, rows, fails) -> None:
             probs.append(f"invalid data_status {sorted(set(status) - valid)}")
         if g.source_id.isna().any():
             probs.append("missing source_id")
-        if srcs - sources:
+        if sources is not None and srcs - sources:
             probs.append(f"unregistered source_id {sorted(srcs - sources)}")
         if name in MUST_BE_SIMULATED and set(status) - {"simulated", "curated"}:
             probs.append(f"must be simulated, has {dict(status)}")
@@ -120,6 +122,7 @@ def _repo_and_report(rows, fails, ready) -> None:
               "- Every simulated or modelled feature states its assumptions.", ""]
     if fails:
         lines += ["## Failures", *[f"- {f}" for f in fails], ""]
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(lines), encoding="utf-8")
     print(f"audit {'PASS' if not fails else 'FAIL'}: {len(ready)} region(s), {len(rows)} layers, {total:,} features -> "
           f"{OUT.relative_to(ROOT)}")

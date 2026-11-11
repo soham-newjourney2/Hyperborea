@@ -72,7 +72,8 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"   # paste the outpu
 
 | Variable | What to set |
 |---|---|
-| `ADMIN_PASSWORD` | the team password for the login screen (ask the repo owner; don't keep `change-me`) |
+| `AUTH_REQUIRED` | `false` (default): open access, no login screen · `true`: admin login (then set the two below) |
+| `ADMIN_PASSWORD` | only with `AUTH_REQUIRED=true`: the login password (don't keep `change-me`) |
 | `JWT_SECRET` | 32+ random characters (command above) |
 | `CORS_ORIGINS` | `http://localhost:5173` for local work |
 | `EXPLAINER` | `template` (default) or `ollama` if you install the local LLM |
@@ -108,11 +109,11 @@ Use the **instruct-2507** build — the plain `qwen3:4b` is a "thinking" model a
 .\scripts\dev.ps1                      # opens windows: API :8000 (auto-reload), web :5173, + Ollama if installed
 ```
 
-- Open <http://localhost:5173> and sign in with `ADMIN_PASSWORD`.
+- Open <http://localhost:5173> — the map opens directly (no login by default).
 - Use the **Pilot** switcher in the header to change region: Kolkata Sector V, Chennai Velachery, Pune Kharadi
   (London and Sydney show "data pending" until P18/P19).
 - Health check: <http://localhost:8000/api/health> (add `?region=pune_kharadi` for another pilot).
-- If the API is down, the app opens the **offline snapshot** (amber badge) without login.
+- If the API is down, the app opens the **offline snapshot** (amber badge).
 
 ---
 
@@ -122,7 +123,7 @@ Use the **instruct-2507** build — the plain `qwen3:4b` is a "thinking" model a
 . .\scripts\env.ps1
 pytest backend/tests -q                # backend: data integrity, engines, endpoints, auth, regions (93 tests)
 cd frontend; npm run lint; npm test; npm run build; cd ..   # frontend: oxlint, vitest, type-check + production build
-python scripts/audit_data.py           # provenance audit of every region → docs/DATA_AUDIT.md (must say PASS)
+python scripts/audit_data.py           # provenance audit of every region (must say PASS; report written to docs/, local only)
 ```
 
 ---
@@ -153,14 +154,14 @@ python -m pipelines.climate            # ERA5 1981–today via Open-Meteo
 python -m pipelines.make_sites         # candidate development sites S1–S3
 python -m pipelines.train_surrogate    # ML flood surrogate (scikit-learn) → models/
 
-# Offline snapshots (API must be running; logs in with ADMIN_PASSWORD from .env)
+# Offline snapshots (API must be running; logs in automatically only if AUTH_REQUIRED=true)
 python scripts/make_snapshots.py                                        # Sector V
 $env:HYPERBOREA_REGION='chennai_velachery'; python scripts/make_snapshots.py; Remove-Item Env:HYPERBOREA_REGION
 ```
 
 Downloads during rebuilds: Geofabrik OSM extracts (eastern 248 MB, southern 559 MB, western 222 MB — already in
 `local/regions/<id>/osm` via LFS), Copernicus DEM, ESA WorldCover and Sentinel-2 tiles (Microsoft Planetary Computer, no account
-needed), ERA5/forecast/CAMS air quality (Open-Meteo, no key). Licences: `docs/DATA_SOURCES.md`.
+needed), ERA5/forecast/CAMS air quality (Open-Meteo, no key). Licences and attributions: README → "Data, licences and attribution".
 
 ---
 
@@ -171,8 +172,8 @@ npx vercel login                                                     # once, for
 .\scripts\deploy.ps1 -Target all -WebOrigin https://<app>.vercel.app # needs HF_TOKEN + HF_SPACE in .env
 ```
 
-Then set the Hugging Face Space secrets `ADMIN_PASSWORD`, `JWT_SECRET` (32+ chars) and `CORS_ORIGINS`.
-Details: `docs/DEPLOY.md`.
+Then set the Hugging Face Space secret `CORS_ORIGINS` (and `AUTH_REQUIRED=true`, `ADMIN_PASSWORD`, `JWT_SECRET` only if you want a login).
+Space secrets: `CORS_ORIGINS` (plus `AUTH_REQUIRED`, `ADMIN_PASSWORD`, `JWT_SECRET` only for a login).
 
 ---
 
@@ -183,9 +184,9 @@ Details: `docs/DEPLOY.md`.
 | `running scripts is disabled` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | Files in `local/regions/*/osm` are tiny text files | LFS not pulled: `git lfs install; git lfs pull` |
 | `No .venv yet` from env.ps1 | run step 3a |
-| Login says "Wrong password" | `ADMIN_PASSWORD` in `.env` differs from the one you typed; restart the API after editing `.env` |
+| Login screen appears | `AUTH_REQUIRED=true` is set in `.env`; set it to `false` (or use `ADMIN_PASSWORD`) and restart the API |
 | "Error in sys.excepthook" lines after a pipeline | harmless GDAL shutdown noise in PowerShell 5.1 (exit code is 0) |
 | LLM option greyed out | Ollama not running or model not pulled (step 5); the template explainer still works |
 | Port 8000/5173 busy | close old dev windows, or `Get-NetTCPConnection -LocalPort 8000` to find the process |
 
-More: `README.md` (overview), `docs/ARCHITECTURE.md`, `docs/DEMO_SCRIPT.md`, `CLAUDE.md` + `planning.md` (how we work).
+More: `README.md` (overview). Design docs, demo script and the data-source register are kept locally by the team (not in the repo).

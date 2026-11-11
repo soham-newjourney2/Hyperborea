@@ -1,5 +1,12 @@
-# Private repo (user decision 2026-11-07): track everything teammates need — incl. Claude Code workflow files,
-# raw OSM data, rasters and the local LLM model (large files via Git LFS, see .gitattributes).
+# ---- local-only (2026-11-11, user decision): Claude Code files, phase plans, docs ----
+CLAUDE.md
+.claude/
+.mcp.json
+planning.md
+phases/
+docs/
+
+# Private repo: track code + all data (large files via Git LFS, see .gitattributes).
 # Still ignored: secrets, machine-specific environments, rebuildable caches and build output.
 
 # ---- secrets (share .env out of band; template = .env.example) ----

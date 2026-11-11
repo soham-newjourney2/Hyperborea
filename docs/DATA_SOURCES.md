@@ -205,3 +205,13 @@ Template:
 - Rainfall thresholds `etccdi_thresholds` (not an official BoM category); ERA5, CAMS, WorldCover, Sentinel-2 as elsewhere (timezone Australia/Sydney, UTM 56S, austral-winter Sentinel-2 window).
 - Drainage, power and water points **simulated**. Checked 2026-11-11: the Data.NSW listing "Drainage pits controlled by the City of Sydney Council" has no data attached; Ausgrid publishes zone-substation interval load CSVs (CC BY, data.nsw.gov.au) but no distribution-substation locations → not usable for the transformer layer.
 
+### s1_rtc — Sentinel-1 Radiometrically Terrain Corrected (RTC) backscatter
+- Provider / access: Microsoft Planetary Computer STAC `sentinel-1-rtc` (derived from ESA Copernicus Sentinel-1 GRD), VV band, descending relative orbit 92   - Licence / terms: CC BY 4.0 (collection metadata) + Copernicus Sentinel data terms   - Verified: yes (STAC collection `license`, 2026-11-11)
+- Accessed: 2026-11-11   - Coverage: Chennai Velachery pilot + 300 m; passes 2015-03-05, 2015-05-28, 2016-02-28 (dry reference), 2015-12-06 (post-flood), 2015-12-18 (control)   - CRS / units: UTM 44N, γ⁰ linear → dB, 10 m
+- data_status: modelled (observation-derived flood mask by thresholding)   - Used by: P22 validation (`pipelines/validate_flood.py` → `sar_flood.gpkg`, `validation.json`)
+- Quality / limitations: no Sentinel-1 pass over Chennai on Planetary Computer between 2023-11-18 and 2024-01-17, so Cyclone Michaung (Dec 2023) could not be used → Dec 2015 event. Urban flooding appears as brightening (double bounce), wet surfaces also brighten → "urban indicator" is lower confidence; control pass checks it. Attribution: "Contains modified Copernicus Sentinel data 2015–2016, processed by Microsoft Planetary Computer".
+
+### wwa_chennai_2015 — Station rainfall summary, Chennai 1–2 December 2015
+- Provider / access: World Weather Attribution (Climate Central / partners), event analysis of the 2015 Chennai floods — mean of station 24-h totals 08:30 1 Dec → 08:30 2 Dec 2015 = **286 mm** (max 494 mm)   - Licence / terms: published figure, cited   - Verified: via search extract (2026-11-11); IMD station bulletins not retrieved
+- data_status: observed (station summary, cited)   - Used by: P22 validation rain inputs B and C (C = 286 mm with ERA5's hourly timing)
+

@@ -1,6 +1,6 @@
 # Data audit — PASS
 
-Generated 2026-11-11T16:15:45+00:00 by `scripts/audit_data.py` over every layer the API serves in 5 region(s) — sector_v, chennai_velachery, pune_kharadi, london_stratford, sydney_green_square (85 layers, 56,269 features). Status mix: observed 46,833, simulated 9,280, curated 88, modelled 68.
+Generated 2026-11-11T18:01:11+00:00 by `scripts/audit_data.py` over every layer the API serves in 5 region(s) — sector_v, chennai_velachery, pune_kharadi, london_stratford, sydney_green_square (86 layers, 56,512 features). Status mix: observed 46,833, simulated 9,280, modelled 311, curated 88.
 
 | Region · layer | Features | data_status | source_id | Result |
 |---|---|---|---|---|
@@ -28,6 +28,7 @@ Generated 2026-11-11T16:15:45+00:00 by `scripts/audit_data.py` over every layer 
 | chennai_velachery · waterways | 120 | observed 120 | osm | PASS |
 | chennai_velachery · water_quality | 8 | simulated 8 | syn_water | PASS |
 | chennai_velachery · cv_water | 5 | modelled 5 | cv_water | PASS |
+| chennai_velachery · sar_flood | 243 | modelled 243 | s1_rtc | PASS |
 | chennai_velachery · drains | 1,055 | simulated 1055 | syn_drain | PASS |
 | chennai_velachery · outfalls | 17 | curated 17 | cur_outfall | PASS |
 | chennai_velachery · catchments | 1,052 | simulated 1052 | syn_drain | PASS |
@@ -92,7 +93,7 @@ Generated 2026-11-11T16:15:45+00:00 by `scripts/audit_data.py` over every layer 
 
 ## Repository checks
 - `.env` tracked: no
-- Files in Git LFS: 99
+- Files in Git LFS: 62
 - Non-LFS files > 5 MB: none
 - Possible secrets in tracked text files: none
 

@@ -15,7 +15,6 @@ import numpy as np
 import shapely
 from shapely.geometry import box
 
-from pipelines.osm_common import ROOT
 from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 UTM = R.metric_crs()

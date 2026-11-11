@@ -24,12 +24,16 @@ a hop-by-hop **Why?** explanation.
 | Accessibility | Free-flow drive times to hospitals / fire / metro; flood Δ and isolated pockets |
 | AI | ML flood surrogate (scikit-learn, held-out F1 0.85 vs 0.32 baseline) for instant sliders; NDWI water layer (index, *not* ML); optional local LLM explainer (Qwen3-4B-Instruct, Apache-2.0) with a grounding check |
 | Reports & health | Infrastructure condition index (partly simulated inputs), printable scenario report (PDF / JSON / CSV) |
-| Access & resilience | Admin login (JWT, role claim); offline snapshot fallback when the API is unreachable |
+| Live early warning | 72 h Open-Meteo forecast → hourly ML quick-scan → worst burst through the full engine → watch / warning banner (not an official warning; labelled demo burst when dry) |
+| Validation | Chennai Dec 2015 flood vs Sentinel-1 radar (urban double-bounce indicator + control pass); hit rate / false alarms / AUC vs a lowest-ground baseline — reported honestly (engine AUC 0.50 vs 0.60) |
+| Upgrade optimiser | Best drain upsizes, plinth raises and detention tanks per budget (assumed unit costs in INR / GBP / AUD), lazy-greedy on the full engine; before/after + risk-vs-cost curve |
+| Ask the twin | Plain-language questions → scenario → answer from engine facts only (rule parser or local LLM with numeric grounding check) |
+| Access & resilience | Open access by default (no login); optional admin JWT login via `AUTH_REQUIRED=true`; offline snapshot fallback when the API is unreachable |
 
 ## Architecture
 React + TypeScript + CesiumJS frontend (Vercel) ↔ FastAPI modular monolith (Hugging Face Space, CPU) — layer store,
 relationship graph, flood / power / access / development / health engines, explainer. Offline pipelines (laptop) build all
-data into small GeoPackages and JSON. Details and diagram: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+data into small GeoPackages and JSON per region (`data/regions/<id>/`).
 
 ## Run locally (Windows / PowerShell)
 **Teammates: follow [SETUP.md](SETUP.md)** — every command, the optional local LLM, data rebuilds and troubleshooting.
@@ -39,10 +43,10 @@ py -3.12 -m venv .venv
 . .\scripts\env.ps1                         # env vars + caches inside the project, activates .venv
 pip install -r requirements-pipelines.txt   # API + offline pipelines
 cd frontend; npm install; cd ..
-copy .env.example .env                      # then set ADMIN_PASSWORD and a ≥ 32-char JWT_SECRET
+copy .env.example .env                      # defaults work (open access); see the table below
 .\scripts\dev.ps1                           # backend :8000 + frontend :5173 (+ Ollama if installed)
 ```
-Open http://localhost:5173 and sign in with `ADMIN_PASSWORD`. Processed data is committed; to rebuild it:
+Open http://localhost:5173 — no login needed (open access by default). Processed data is committed; to rebuild it:
 ```powershell
 python -m pipelines.fetch_osm; python -m pipelines.normalize_osm        # OSM (Geofabrik extract)
 python -m pipelines.fetch_dem; python -m pipelines.build_drainage       # Copernicus DEM → simulated drainage
@@ -57,7 +61,8 @@ Optional local LLM: `python scripts/install_ollama.py`, then `ollama pull qwen3:
 ### Environment variables (`.env`)
 | Name | Purpose |
 |---|---|
-| `ADMIN_PASSWORD` | admin login password |
+| `AUTH_REQUIRED` | `false` (default) = open access; `true` = admin login required |
+| `ADMIN_PASSWORD` | admin login password (only used when `AUTH_REQUIRED=true`) |
 | `JWT_SECRET` | token signing secret (≥ 32 characters) |
 | `CORS_ORIGINS` | allowed browser origins (comma-separated) |
 | `EXPLAINER` | `template` (default) — the local LLM is chosen per request in the UI |
@@ -66,11 +71,10 @@ Optional local LLM: `python scripts/install_ollama.py`, then `ollama pull qwen3:
 
 ## Tests
 `pytest -q` — 86 tests (data integrity, engines, endpoints, auth, grounding) · `cd frontend; npm test; npm run build` ·
-`python scripts/audit_data.py` → [docs/DATA_AUDIT.md](docs/DATA_AUDIT.md).
+`python scripts/audit_data.py` (provenance audit of every region; must say PASS).
 
 ## Data, licences and attribution
-Every dataset is registered in [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md); decisions in [docs/DECISIONS.md](docs/DECISIONS.md);
-AI components and licences in [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) and `models/model_cards/`.
+Every feature carries `data_status` + `source_id`; AI components and licences are in `models/model_cards/` and `models/regions/<id>/model_cards/`. The full data-source register and design docs are kept by the team outside the repo.
 © OpenStreetMap contributors (ODbL) · Copernicus DEM GLO-30 © DLR/Airbus, ESA · ERA5 (Copernicus/ECMWF), weather and CAMS
 air quality via Open-Meteo.com (CC BY 4.0) · © ESA WorldCover 2021 (CC BY 4.0) · Contains modified Copernicus Sentinel data
 2025–2026 · Sentinel-2 cloudless by EOX.

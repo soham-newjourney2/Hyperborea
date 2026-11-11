@@ -6,7 +6,7 @@ Use only these presets and sites; every expected number below comes from the com
 ## Before the session (T − 15 min)
 1. Demo laptop on mains power, display mirrored, browser zoom 100 %.
 2. `. .\scripts\env.ps1; .\scripts\dev.ps1` (or open the public URL and **wake the HF Space** ~3 min early).
-3. Sign in with the admin password. Keep a second tab of the app open as a spare.
+3. The app opens without login (P20). Keep a second tab of the app open as a spare.
 4. Quality: **High** on the RTX laptop; switch to **Standard** if the frame rate drops.
 5. Local LLM (optional): Ollama window running (dev.ps1 starts it). If not, use **Template** — it's the default anyway.
 

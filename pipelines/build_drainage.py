@@ -19,7 +19,6 @@ import shapely
 from shapely.geometry import LineString, MultiPoint, Point
 
 from backend.engine.hydraulics import MANNING_N, MIN_SLOPE, PIPE_SIZES_M, manning_full_circular
-from pipelines.osm_common import ROOT
 from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 UTM = R.metric_crs()

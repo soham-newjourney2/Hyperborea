@@ -23,7 +23,6 @@ from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_sco
 from backend.app.api.scenarios import flood_context
 from backend.engine.flood import run_flood
 from backend.engine.surrogate import FEATURES, METRICS, MODEL, drain_static, features
-from pipelines.osm_common import ROOT
 from backend.app.core import regions as R  # noqa: E402  (P16: HYPERBOREA_REGION → paths, CRS, timezone)
 
 N_RUNS, SEED, BLOCK_M, TEST_SHARE = 2000, 42, 500, 0.25

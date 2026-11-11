@@ -5,7 +5,7 @@ import geopandas as gpd
 import networkx as nx
 import pytest
 from fastapi.testclient import TestClient
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import LineString, Polygon
 
 from backend.app.api.graph import get_graph
 from backend.app.core.paths import GPKG

@@ -13,7 +13,6 @@ from datetime import datetime, timezone
 
 import geopandas as gpd
 import numpy as np
-import pandas as pd
 import yaml
 from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
