@@ -59,13 +59,15 @@ overflow downhill and add lake/river inflows.
 ## Quick start (Windows / PowerShell)
 ```powershell
 git lfs install
+$env:GIT_LFS_SKIP_SMUDGE = "1"   # skip the 1.7 GB of rebuild-only LFS files; setup fetches the ~12 MB the app needs
 git clone https://github.com/soham-newjourney2/1.hyperborea.git hyperborea; cd hyperborea
-.\scripts\setup.ps1            # .venv + Python packages, npm packages, LFS data, .env from the template
+Remove-Item Env:GIT_LFS_SKIP_SMUDGE
+.\scripts\setup.ps1            # run-only data + .venv + Python and npm packages + .env (add -Full to rebuild data)
 . .\scripts\env.ps1            # every new shell: caches inside the project, activates .venv
 .\scripts\dev.ps1              # API :8000 + web :5173 (+ local LLM if installed)
 ```
 Open <http://localhost:5173> — no login by default. Step-by-step guide, optional local LLM and data rebuilds:
-[SETUP.md](SETUP.md).
+[docs/SETUP.md](docs/SETUP.md).
 
 ## Architecture
 React 19 + TypeScript + CesiumJS frontend ↔ FastAPI modular monolith (layer store, relationship graph, flood / power /
