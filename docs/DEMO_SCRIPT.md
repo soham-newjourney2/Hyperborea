@@ -1,7 +1,7 @@
 # Demo script — fixed 15-minute path (VISION §17.1)
 
 Use only these presets and sites; every expected number below comes from the committed snapshots
-(`data/snapshots/flood_*.json`, `dev_compare.json`) and must match on screen. **Do not enter untested parameters live.**
+(`data/regions/sector_v/snapshots/flood_*.json`, `dev_compare.json`) and must match on screen. **Do not enter untested parameters live.**
 
 ## Before the session (T − 15 min)
 1. Demo laptop on mains power, display mirrored, browser zoom 100 %.

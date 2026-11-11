@@ -88,11 +88,13 @@ Install latest stable versions at phase time; record exact versions in `docs/LOG
 **Repo layout** (create folders only when a phase needs them):
 ```
 CLAUDE.md  planning.md  README.md  .gitignore  .env.example  .mcp.json  .claude/settings.json
-phases/P01..P15.md     docs/{LOG,DECISIONS,DATA_SOURCES,SUBMISSION_CHECKLIST,TEAM_BRIEFS,VISION}.md
+phases/P01..P19.md     docs/{LOG,DECISIONS,DATA_SOURCES,SUBMISSION_CHECKLIST,TEAM_BRIEFS,VISION}.md
 frontend/              backend/{app/{api,core,services},engine,tests,requirements.txt,Dockerfile}
 pipelines/             config/ (scenarios.yaml, norms.yaml)      scripts/ (env.ps1, dev.ps1, deploy.ps1, …)
-data/{raw,processed,curated,synthetic,snapshots}   models/{model_cards}   presentation/screens/
-local/  (gitignored: cache/, hf/, torch/, ollama/, tools/, tiles/)
+data/regions/<id>/{raw,processed,curated,synthetic,snapshots}   (id: sector_v, chennai_velachery, pune_kharadi, london_stratford, sydney_green_square)
+models/regions/<id>/ (surrogate + model cards) · models/model_cards/ (shared: LLM explainer)   presentation/screens/
+local/regions/<id>/{osm,rasters,cache} (OSM extract, DEM; cache ignored) · local/{tools,ollama} (LLM, ignored) · local/cache (ignored)
+frontend/public/{snapshots,overlays}/regions/<id>/ + snapshots/regions.json
 ```
 Git (updated 2026-11-07, user decision, private repo): commit everything teammates need — code, configs, docs, Claude workflow files, data (raw + processed), rasters, OSM extracts and the local LLM; files > 5 MB go through **Git LFS** (`.gitattributes`). Ignore only `.env` secrets, `.venv`, `node_modules`, `local/cache|hf|torch`, build output.
 
@@ -172,8 +174,8 @@ Status values: `todo` → `in-progress` → `built` (code + tests pass) → **`d
 | P15 | Admin login, hardening, demo pack, final redeploy | Wed 11 Nov | done | 2026-11-07 |
 | P16 | Multi-region core (registry + `?region=`) | post-qual | built | |
 | P17 | Chennai (Velachery) + Pune (Kharadi) | post-qual | built | |
-| P18 | London (Hackney Wick / Stratford) | post-qual | todo | |
-| P19 | Sydney (Green Square) + multi-region demo pack | post-qual | todo | |
+| P18 | London (Hackney Wick / Stratford) | post-qual | built | |
+| P19 | Sydney (Green Square) + multi-region demo pack | post-qual | in-progress | |
 
 **Thu 12 Nov:** submission + presentation. **13–15 Nov:** buffer before official deadline.
 

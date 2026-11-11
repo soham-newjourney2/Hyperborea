@@ -8,7 +8,7 @@ flowchart LR
     DL[Disaster lab<br/>Why? chains · AI quick-scan]
     DV[Development<br/>A/B/C compare]
     AC[Access · Environment<br/>Health · Report]
-    SN[(Offline snapshots<br/>public/snapshots)]
+    SN[(Offline snapshots<br/>public/snapshots/regions/&lt;id&gt;)]
   end
 
   subgraph API["Backend — FastAPI modular monolith (HF Space, CPU)"]
@@ -29,7 +29,7 @@ flowchart LR
     DEM[Copernicus DEM] --> P2[build_drainage]
     S2[Sentinel-2 · WorldCover · ERA5] --> P3[landcover · cv_water · climate]
     P1 & P2 & P3 --> P4[build_power · build_access · train_surrogate]
-    P4 --> DATA[(data/processed<br/>GPKG + JSON, < 5 MB each)]
+    P4 --> DATA[(data/regions/&lt;id&gt;/processed<br/>GPKG + JSON per region)]
   end
 
   LLM[Local Ollama<br/>Qwen3-4B-Instruct · laptop only]

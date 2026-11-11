@@ -1,5 +1,7 @@
 # Data sources register
 
+> **Folder layout (2026-11-11):** every region has its own folders — `data/regions/<id>/{raw,processed,curated,synthetic,snapshots}`, `local/regions/<id>/{osm,rasters,cache}`, `models/regions/<id>/`. Paths below written as `data/processed/…`, `local/rasters/…`, `local/cache/…` or `models/surrogate…` refer to the same files inside the region's folder (Sector V = `sector_v`).
+
 Every dataset gets an entry **before** use. `source_id` in feature properties must match an ID here. Licences below are what we expect — **verify on the provider page and update `Verified`**.
 
 Template:
@@ -167,3 +169,39 @@ Template:
 
 ### P17 reuse note — global sources for Chennai + Pune
 - Copernicus DEM (`cop_dem`), ERA5 (`om_archive`), Open-Meteo forecast (`om_forecast`) and CAMS (`om_aq`), ESA WorldCover (`esa_wc`), Sentinel-2 L2A (`s2_l2a`) are global: same providers, licences and processing, per-region bbox + timezone (Asia/Kolkata). IMD thresholds (`imd_thresholds`) and India NAQI (`naqi`) apply to both (India). Drainage, power, water-quality points stay **simulated** (`syn_drain`, `syn_power`, `syn_water`): no machine-readable municipal drain or utility data was found (Chennai GCC: ward PDF maps only; Pune PMC on OpenCity: two CSV tables (primary drain channels + coverage 2012, ward-wise road drain coverage 2016; public domain) with no geometry, so they cannot place drains) — checked 2026-11-07.
+
+### ea_lidar_dtm — Environment Agency LIDAR Composite DTM 2022, 1 m (England)
+- Provider / access: Environment Agency, Defra Data Services WCS 2.0.1 `environment.data.gov.uk/spatialdata/lidar-composite-digital-terrain-model-dtm-1m/wcs`, coverage `13787b9a-…__Lidar_Composite_Elevation_DTM_1m`; requested in 1.5 km tiles with `SCALEFACTOR=0.2` (server-resampled to 5 m), EPSG:27700 → EPSG:4326 (`pipelines/fetch_dem.py`, regions with `dem: ea_lidar_dtm`)   - Licence / terms: Open Government Licence v3.0   - Verified: yes (data.gov.uk record, 2026-11-07)
+- Accessed: 2026-11-07   - Coverage: London Hackney Wick & Stratford pilot + 2 km buffer   - CRS / units: metres above ODN
+- data_status: observed (bare-earth terrain from airborne LiDAR; ±15 cm RMSE per survey)   - Used by: P18 drainage slopes + ground levels (London)
+- Quality / limitations: composite of surveys of different years; 5 m resampling smooths kerbs; replaces the Copernicus DSM (which includes roofs/trees) for London only
+- Attribution text shown in UI: "© Environment Agency copyright and/or database right 2022. All rights reserved."
+
+### etccdi_thresholds — ETCCDI-style daily rainfall thresholds (R20mm / R30mm / R50mm)
+- Provider / access: Hyperborea choice following the WMO ETCCDI climate-extremes indices (R10mm/R20mm "heavy / very heavy precipitation days"; R30/R50 as commonly used extensions)   - Licence / terms: n/a   - Verified: n/a
+- data_status: curated   - Used by: P18 climate summary outside India (London; P19 Sydney) instead of the IMD categories
+- Quality / limitations: **not an official UK category** (the Met Office issues impact-based warnings, not fixed mm/day classes); labelled so in the UI
+
+### daqi — UK Daily Air Quality Index bands (Defra / COMEAP)
+- Provider / access: GOV.UK "Pollutant concentrations for the Daily Air Quality Index (DAQI)" → `config/daqi.yaml`   - Licence / terms: Open Government Licence v3.0   - Verified: yes (2026-11-07)
+- data_status: curated   - Used by: P18 air-quality card for London (CAMS concentrations via `om_aq`, modelled — not AURN stations)
+- Processing: PM2.5/PM10 24-h mean, NO₂ max hourly mean, O₃ max 8-h running mean of the last 24 h → level 1–10 per pollutant; index = highest level; bands Low 1–3, Moderate 4–6, High 7–9, Very High 10
+
+### P18 London — other sources checked
+- OSM (`osm`): Geofabrik `europe/united-kingdom/england/greater-london-latest.osm.pbf`, ODbL, accessed 2026-11-07.
+- **UKPN Secondary Sites** (UK Power Networks, CC BY 4.0, 72,750 sites with ONAN ratings): API returns 403 without a registered account (2026-11-07) → **not used**; London transformers stay **simulated** (`syn_power`). Registering on the UKPN portal would let us replace them with observed locations + ratings.
+- **EA Risk of Flooding from Surface Water** (OGL v3): no WFS/WCS endpoint found under `environment.data.gov.uk/spatialdata` (2026-11-07; download is by area-of-interest in the Defra portal) → validation overlay **deferred**.
+- Copernicus DEM not used for London (EA LiDAR is better); ERA5, CAMS, WorldCover, Sentinel-2 as elsewhere (London timezone Europe/London, UTM 30N).
+
+### nsw_aqc — NSW Air Quality Categories (NSW Government)
+- Provider / access: NSW Government air-quality health advice (categories Good / Fair / Poor / Very poor / Extremely poor) → `config/nsw_aqc.yaml`   - Licence / terms: NSW Government website content (CC BY 4.0 per NSW copyright notice — verify)   - Verified: partial (2026-11-11: official page blocked automated access; bands taken from search extracts of the NSW health-advice + station pages)
+- Processing: bands = 0.67 / 1 / 1.5 / 2 × NEPM standard (PM2.5 24-h 25, PM10 24-h 50 µg/m³, O₃ 1-h 10 pphm, NO₂ 1-h 8 pphm); O₃/NO₂ pphm → µg/m³ at 25 °C (assumption); PM 24-h mean, O₃ + NO₂ worst hour; category = worst pollutant
+- data_status: curated   - Used by: P19 air card for Sydney (CAMS concentrations via `om_aq`, modelled — not NSW DCCEEW stations)
+- Quality / limitations: intermediate NO₂ bands (8 / 12 pphm) inferred from the standard-multiple pattern (end-points 5.36 / 16 pphm confirmed); colours approximate
+
+### P19 Sydney — sources
+- OSM (`osm`): **BBBike** city extract `download.bbbike.org/osm/bbbike/Sydney/Sydney.osm.pbf` (58 MB, built 2026-11-07 from OSM, ODbL; Geofabrik offers only all of Australia, 974 MB). Accessed 2026-11-11.
+- DEM: Copernicus GLO-30 (`cop_dem`). NSW Spatial Services / ELVIS LiDAR (CC BY 4.0) needs an order through the ELVIS portal (no open WCS found) → not used.
+- Rainfall thresholds `etccdi_thresholds` (not an official BoM category); ERA5, CAMS, WorldCover, Sentinel-2 as elsewhere (timezone Australia/Sydney, UTM 56S, austral-winter Sentinel-2 window).
+- Drainage, power and water points **simulated**. Checked 2026-11-11: the Data.NSW listing "Drainage pits controlled by the City of Sydney Council" has no data attached; Ausgrid publishes zone-substation interval load CSVs (CC BY, data.nsw.gov.au) but no distribution-substation locations → not usable for the transformer layer.
+

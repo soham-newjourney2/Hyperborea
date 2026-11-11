@@ -1,6 +1,6 @@
 # Data audit — PASS
 
-Generated 2026-11-07T17:22:47+00:00 by `scripts/audit_data.py` over every layer the API serves in 3 region(s) — sector_v, chennai_velachery, pune_kharadi (51 layers, 33,938 features). Status mix: observed 27,089, simulated 6,748, curated 53, modelled 48.
+Generated 2026-11-11T16:15:45+00:00 by `scripts/audit_data.py` over every layer the API serves in 5 region(s) — sector_v, chennai_velachery, pune_kharadi, london_stratford, sydney_green_square (85 layers, 56,269 features). Status mix: observed 46,833, simulated 9,280, curated 88, modelled 68.
 
 | Region · layer | Features | data_status | source_id | Result |
 |---|---|---|---|---|
@@ -55,10 +55,44 @@ Generated 2026-11-07T17:22:47+00:00 by `scripts/audit_data.py` over every layer 
 | pune_kharadi · transformers | 137 | simulated 137 | syn_power | PASS |
 | pune_kharadi · feeders | 2 | simulated 2 | syn_power | PASS |
 | pune_kharadi · osm_power | 19 | observed 19 | osm | PASS |
+| london_stratford · boundary | 1 | curated 1 | cur_boundary | PASS |
+| london_stratford · buildings | 1,348 | observed 1348 | osm | PASS |
+| london_stratford · roads | 4,686 | observed 4686 | osm | PASS |
+| london_stratford · facilities | 195 | observed 195 | osm | PASS |
+| london_stratford · waterways | 311 | observed 311 | osm | PASS |
+| london_stratford · water_quality | 8 | simulated 8 | syn_water | PASS |
+| london_stratford · cv_water | 1 | modelled 1 | cv_water | PASS |
+| london_stratford · drains | 332 | simulated 332 | syn_drain | PASS |
+| london_stratford · outfalls | 15 | curated 15 | cur_outfall | PASS |
+| london_stratford · catchments | 332 | simulated 332 | syn_drain | PASS |
+| london_stratford · drain_nodes | 262 | simulated 262 | syn_drain | PASS |
+| london_stratford · landuse | 3,875 | observed 3875 | osm | PASS |
+| london_stratford · sites | 3 | curated 3 | cur_sites | PASS |
+| london_stratford · substations | 2 | curated 2 | osm | PASS |
+| london_stratford · transformers | 139 | simulated 139 | syn_power | PASS |
+| london_stratford · feeders | 8 | simulated 8 | syn_power | PASS |
+| london_stratford · osm_power | 1,371 | observed 1371 | osm | PASS |
+| sydney_green_square · boundary | 1 | curated 1 | cur_boundary | PASS |
+| sydney_green_square · buildings | 1,318 | observed 1318 | osm | PASS |
+| sydney_green_square · roads | 3,908 | observed 3908 | osm | PASS |
+| sydney_green_square · facilities | 104 | observed 104 | osm | PASS |
+| sydney_green_square · waterways | 160 | observed 160 | osm | PASS |
+| sydney_green_square · water_quality | 8 | simulated 8 | syn_water | PASS |
+| sydney_green_square · cv_water | 19 | modelled 19 | cv_water | PASS |
+| sydney_green_square · drains | 405 | simulated 405 | syn_drain | PASS |
+| sydney_green_square · outfalls | 8 | curated 8 | cur_outfall | PASS |
+| sydney_green_square · catchments | 403 | simulated 403 | syn_drain | PASS |
+| sydney_green_square · drain_nodes | 292 | simulated 292 | syn_drain | PASS |
+| sydney_green_square · landuse | 1,311 | observed 1311 | osm | PASS |
+| sydney_green_square · sites | 3 | curated 3 | cur_sites | PASS |
+| sydney_green_square · substations | 2 | curated 2 | osm | PASS |
+| sydney_green_square · transformers | 335 | simulated 335 | syn_power | PASS |
+| sydney_green_square · feeders | 8 | simulated 8 | syn_power | PASS |
+| sydney_green_square · osm_power | 1,157 | observed 1157 | osm | PASS |
 
 ## Repository checks
 - `.env` tracked: no
-- Files in Git LFS: 47
+- Files in Git LFS: 99
 - Non-LFS files > 5 MB: none
 - Possible secrets in tracked text files: none
 
