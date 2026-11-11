@@ -60,7 +60,7 @@ overflow downhill and add lake/river inflows.
 ```powershell
 git lfs install
 $env:GIT_LFS_SKIP_SMUDGE = "1"   # skip the 1.7 GB of rebuild-only LFS files; setup fetches the ~12 MB the app needs
-git clone https://github.com/soham-newjourney2/1.hyperborea.git hyperborea; cd hyperborea
+git clone https://github.com/soham-newjourney2/z-Hyperborea.git hyperborea; cd hyperborea
 Remove-Item Env:GIT_LFS_SKIP_SMUDGE
 .\scripts\setup.ps1            # run-only data + .venv + Python and npm packages + .env (add -Full to rebuild data)
 . .\scripts\env.ps1            # every new shell: caches inside the project, activates .venv

@@ -38,7 +38,7 @@ LFS downloads and let the setup script fetch what is needed:
 ```powershell
 git lfs install                                   # once per machine
 $env:GIT_LFS_SKIP_SMUDGE = "1"                    # clone without downloading LFS files
-git clone https://github.com/soham-newjourney2/1.hyperborea.git hyperborea
+git clone https://github.com/soham-newjourney2/z-Hyperborea.git hyperborea
 Remove-Item Env:GIT_LFS_SKIP_SMUDGE
 cd hyperborea
 ```
