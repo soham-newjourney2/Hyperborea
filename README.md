@@ -11,20 +11,20 @@ a hop-by-hop **Why?** explanation.
 > Scenario results are *estimates, not predictions*; risk scores are *indices, not probabilities*.
 
 ## What it does
-| Module | Highlights | Screens |
-|---|---|---|
-| 3D command centre | CesiumJS (no ion), extruded buildings, layer manager with provenance chips, inspector, floating info tag, 2D/3D, render-quality toggle | `P03_*` |
-| Weather & climate | Open-Meteo live + 72 h rain; ERA5 1981–2025 rainfall record with IMD thresholds | `P05_*` |
-| Drainage (simulated) | 542 drains sized by design storm, DEM flow directions, 7 outfalls, 540 catchments, Manning capacity | `P06_*` |
-| Relationship graph | 9.6k assets, 7k typed edges (DRAINS_TO, ADJACENT_TO, ACCESSIBLE_VIA, LOCATED_WITHIN, DEPENDS_ON, SUPPLIES), each with its rule; Cytoscape explorer | `P07_*` |
-| Disaster lab | Rain → drain overload → ponding → impassable roads → exposed buildings → transformer shutdown → facility power/access loss, with Why? chains | `P08_*`, `P10_*` |
-| Development assessment | Draw or pick a site → 7 checks (drainage, flood, road, facilities, electrical, water, land use) → verdict + A/B/C comparison — never "approved" | `P09_*` |
-| Electrical (simulated) | 194 transformers, schematic 11 kV feeders, OSM substations; cascade + development headroom | `P10_*` |
-| Environment | CAMS air quality → India NAQI; demo water points (labelled); ESA WorldCover + Sentinel-2 NDVI overlays | `P11_*` |
-| Accessibility | Free-flow drive times to hospitals / fire / metro; flood Δ and isolated pockets | `P12_*` |
-| AI | ML flood surrogate (scikit-learn, held-out F1 0.85 vs 0.32 baseline) for instant sliders; NDWI water layer (index, *not* ML); optional local LLM explainer (Qwen3-4B-Instruct, Apache-2.0) with a grounding check | `P13_*`, `P14_*` |
-| Reports & health | Infrastructure condition index (partly simulated inputs), printable scenario report (PDF / JSON / CSV) | `P14_*` |
-| Access & resilience | Admin login (JWT, role claim); offline snapshot fallback when the API is unreachable | `P04_*`, `P15_*` |
+| Module | Highlights |
+|---|---|
+| 3D command centre | CesiumJS (no ion), extruded buildings, layer manager with provenance chips, inspector, floating info tag, 2D/3D, render-quality toggle |
+| Weather & climate | Open-Meteo live + 72 h rain; ERA5 1981–2025 rainfall record with IMD thresholds |
+| Drainage (simulated) | 542 drains sized by design storm, DEM flow directions, 7 outfalls, 540 catchments, Manning capacity |
+| Relationship graph | 9.6k assets, 7k typed edges (DRAINS_TO, ADJACENT_TO, ACCESSIBLE_VIA, LOCATED_WITHIN, DEPENDS_ON, SUPPLIES), each with its rule; Cytoscape explorer |
+| Disaster lab | Rain → drain overload → ponding → impassable roads → exposed buildings → transformer shutdown → facility power/access loss, with Why? chains |
+| Development assessment | Draw or pick a site → 7 checks (drainage, flood, road, facilities, electrical, water, land use) → verdict + A/B/C comparison — never "approved" |
+| Electrical (simulated) | 194 transformers, schematic 11 kV feeders, OSM substations; cascade + development headroom |
+| Environment | CAMS air quality → India NAQI; demo water points (labelled); ESA WorldCover + Sentinel-2 NDVI overlays |
+| Accessibility | Free-flow drive times to hospitals / fire / metro; flood Δ and isolated pockets |
+| AI | ML flood surrogate (scikit-learn, held-out F1 0.85 vs 0.32 baseline) for instant sliders; NDWI water layer (index, *not* ML); optional local LLM explainer (Qwen3-4B-Instruct, Apache-2.0) with a grounding check |
+| Reports & health | Infrastructure condition index (partly simulated inputs), printable scenario report (PDF / JSON / CSV) |
+| Access & resilience | Admin login (JWT, role claim); offline snapshot fallback when the API is unreachable |
 
 ## Architecture
 React + TypeScript + CesiumJS frontend (Vercel) ↔ FastAPI modular monolith (Hugging Face Space, CPU) — layer store,
