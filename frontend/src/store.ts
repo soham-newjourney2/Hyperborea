@@ -4,7 +4,7 @@ import type { Asset, DevAssessment, FloodResult, LayerMeta, Region, Weather } fr
 export type Imagery = 'osm' | 'eox'
 export type ViewMode = '3d' | '2d'
 export type Quality = 'high' | 'standard'
-export type RightTab = 'inspector' | 'relations' | 'disaster' | 'develop' | 'access' | 'weather'
+export type RightTab = 'inspector' | 'relations' | 'disaster' | 'develop' | 'access' | 'weather' | 'ask'
 export type AccessCat = 'hospital' | 'fire' | 'metro'
 export type AccessView = { cat: AccessCat; mode: 'baseline' | 'delta'; colors: Record<string, string> }
 export type LonLat = [number, number]

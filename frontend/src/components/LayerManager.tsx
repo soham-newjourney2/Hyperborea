@@ -5,6 +5,7 @@ const EXTENT_NOTE: Record<string, string> = {
   facilities: 'pilot + 2 km buffer',
   water_quality: 'pilot + surrounding canals',
   cv_water: 'pilot + 300 m, two seasons',
+  sar_flood: 'Dec 2015 event · radar-derived',
 }
 
 export default function LayerManager() {

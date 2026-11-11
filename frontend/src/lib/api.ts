@@ -21,7 +21,7 @@ const SNAPSHOT_PATHS = new Set(['weather/current', 'weather/forecast', 'climate/
 /** API path → snapshot file name (must match scripts/make_snapshots.py); null = not snapshotted. */
 export function snapshotName(path: string): string | null {
   const [p, q = ''] = path.replace(/^\/+/, '').split('?')
-  if (p === 'health' || p === 'region' || p === 'layers' || p === 'regions') return `${p}.json`
+  if (p === 'health' || p === 'region' || p === 'layers' || p === 'regions' || p === 'warning' || p === 'validation') return `${p}.json`
   if (SNAPSHOT_PATHS.has(p)) return `${p.replace('/', '_')}.json`
   const m = /^layers\/([^/]+)$/.exec(p)
   if (m) return `layer_${decodeURIComponent(m[1])}${/(^|&)in_pilot=true(&|$)/.test(q) ? '_pilot' : ''}.json`
@@ -31,6 +31,7 @@ export function snapshotName(path: string): string | null {
 }
 
 export interface Health {
+  auth_required?: boolean // P20: false (default) = open access, no login screen
   status: string // "ok" live, "snapshot" when served from the offline fallback
   version: string
   data_timestamp: string | null
@@ -704,3 +705,89 @@ export interface RegionInfo {
 }
 export const getRegions = (signal?: AbortSignal) =>
   getJson<{ default: string; regions: RegionInfo[] }>('regions', signal)
+
+// ---- P21 live early warning (GET /warning; offline: warning.json) ----------------------------------------
+export interface WarningOutlook {
+  label: string
+  level: 'none' | 'watch' | 'warning'
+  headline: string
+  reasons: string[]
+  hours: number
+  peak_rain_mm_h: number
+  total_rain_mm: number
+  timeline: { time: string; rain_mm_h: number; probability_pct: number | null; unlikely: boolean; drains_overloaded_est: number }[]
+  window: { start: number; hours: number; rain_mm_h: number; total_mm: number; start_time: string; end_time: string; drains_overloaded_est: number } | null
+  summary: Record<string, number | null> | null
+  top_affected: { asset_id: string; kind: string; name: string | null; state: string; risk: number }[]
+  result_id: string | null
+  forecast_fetched_at: string
+  forecast_stale: boolean
+  demo?: boolean
+}
+export const getWarning = (signal?: AbortSignal, demo = false) =>
+  getJson<WarningOutlook>(demo ? 'warning?demo=true' : 'warning', signal, LAYER_TIMEOUT_MS)
+
+// ---- P22 validation vs an observed flood (GET /validation) ------------------------------------------------
+type Scores = { tp: number; fp: number; fn: number; tn: number; pod: number | null; far: number | null; csi: number | null }
+export interface Validation {
+  region: string
+  event: string
+  context: string
+  observed: { post_date: string; control_date: string; catchments_compared: number; catchments_flooded: number;
+    urban_brightening_share_post: number; urban_brightening_share_control: number; rule: string; label: string }
+  rain: { era5_event_total_mm: number; era5_peak_mm_h: number; station_total_mm: number; station_source: string }
+  runs: Record<string, { label: string; rain_mm_h: number; duration_h: number; predicted_flooded: number; engine: Scores;
+    baseline_lowest_ground: Scores; auc_engine_depth: number | null; auc_lowest_ground: number | null }>
+  limitations: string[]
+}
+export const getValidation = (signal?: AbortSignal) => getJson<Validation>('validation', signal)
+
+// ---- P23 upgrade optimiser (POST /optimise; live API only) ---------------------------------------------
+export interface OptimiseConfig { currency: string; symbol: string; default_budget: number; budget_step: number; objective: Record<string, number> }
+export interface OptimiseResult {
+  label: string
+  currency: string
+  symbol: string
+  budget: number
+  spent: number
+  objective_formula: string
+  objective_before: number
+  objective_after: number
+  risk_removed_pct: number
+  before: Record<string, number | null>
+  after: Record<string, number | null>
+  plan: { step: number; kind: string; asset_id: string; label: string; cost: number; gain: number; cumulative_cost: number; objective_after: number }[]
+  curve: { cost: number; objective: number }[]
+  candidates_considered: number
+  unit_costs: Record<string, number>
+  after_result?: FloodResult
+}
+export const getOptimiseConfig = (signal?: AbortSignal) => getJson<OptimiseConfig>('optimise/config', signal)
+export async function postOptimise(body: { preset: string; budget: number; with_map?: boolean }): Promise<OptimiseResult> {
+  const r = await fetchWithTimeoutInit(apiUrl('optimise'), {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+  }, undefined, 60000)
+  if (!r.ok) throw new Error(`optimise ${r.status}`)
+  return (await r.json()) as OptimiseResult
+}
+
+// ---- P24 ask-the-twin (POST /ask; live API only) -------------------------------------------------------
+export interface AskAnswer {
+  question: string
+  answer: string
+  parser: 'llm' | 'rule'
+  answer_mode: 'llm' | 'template'
+  grounding_rejected: string[]
+  intent: { focus: string; preset: string | null; rain_mm_h: number; duration_h: number }
+  notes: string[]
+  facts: Record<string, unknown>
+  result_id: string
+  label: string
+}
+export async function postAsk(question: string, mode: 'template' | 'llm'): Promise<AskAnswer> {
+  const r = await fetchWithTimeoutInit(apiUrl('ask'), {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ question, mode }),
+  }, undefined, 120000)
+  if (!r.ok) throw new Error(`ask ${r.status}`)
+  return (await r.json()) as AskAnswer
+}

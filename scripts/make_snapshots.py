@@ -22,14 +22,15 @@ OUT = SNAP_ROOT / "regions" / RID
 DATA_SNAP = R.data_dir("snapshots")
 # Same extents the map requests (MapView FULL_EXTENT): these two in full, the rest pilot-only.
 FULL_EXTENT = {"facilities", "boundary", "drains", "drain_nodes", "outfalls", "catchments", "sites",
-               "substations", "transformers", "feeders", "water_quality", "cv_water"}  # must match MapView FULL_EXTENT
+               "substations", "transformers", "feeders", "water_quality", "cv_water", "sar_flood"}  # must match MapView FULL_EXTENT
 
 
 def main(base: str = "http://127.0.0.1:8000/api") -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     c = httpx.Client(base_url=base, timeout=60, params={"region": RID})
-    tok = c.post("/auth/login", json={"password": get_settings().admin_password}).raise_for_status().json()["access_token"]
-    c.headers["Authorization"] = f"Bearer {tok}"
+    if c.get("/health").json().get("auth_required"):  # P20: log in only when the API asks for it
+        tok = c.post("/auth/login", json={"password": get_settings().admin_password}).raise_for_status().json()["access_token"]
+        c.headers["Authorization"] = f"Bearer {tok}"
     files: dict[str, bytes] = {}
 
     health = c.get("/health").raise_for_status().json()
@@ -45,6 +46,10 @@ def main(base: str = "http://127.0.0.1:8000/api") -> None:
     for path in ("weather/current", "weather/forecast", "climate/summary", "scenarios/presets",
                  "environment/air", "environment/water", "environment/landcover", "access/summary"):
         files[path.replace("/", "_") + ".json"] = c.get(f"/{path}").raise_for_status().content
+    files["warning.json"] = c.get("/warning").raise_for_status().content  # P21 early-warning outlook
+    v = c.get("/validation")  # P22: only regions with a scored event
+    if v.status_code == 200:
+        files["validation.json"] = v.content
     for t in ("drain", "transformer", "road"):  # P15: health card works offline (top-10 as the UI asks)
         files[f"infra_health_{t}.json"] = c.get("/infra-health", params={"type": t, "top": 10}).raise_for_status().content
     # P08 fixed demo results (UI fallback + expected-output test).

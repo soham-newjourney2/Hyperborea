@@ -45,7 +45,7 @@ const css = (c: string, a = 1) => Color.fromCssColorString(c).withAlpha(a)
 const HIGHLIGHT = css('#facc15')
 // Facilities include the 2 km buffer (hospitals outside the pilot matter); everything else pilot-only.
 const FULL_EXTENT = new Set(['facilities', 'boundary', 'drains', 'drain_nodes', 'outfalls', 'catchments', 'sites',
-  'substations', 'transformers', 'feeders', 'water_quality', 'cv_water'])
+  'substations', 'transformers', 'feeders', 'water_quality', 'cv_water', 'sar_flood'])
 const DRAIN_LIFT_M = 1.5 // above road polylines (avoid z-fighting)
 const EOX_URL = 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg'
 
@@ -219,6 +219,10 @@ function styleLayer(id: string, ds: GeoJsonDataSource) {
           e.polygon.outlineColor = new ConstantProperty(css('#67e8f9'))
           e.polygon.height = new ConstantProperty(0.4)
         }
+        break
+      case 'sar_flood': // P22: radar-observed flood (violet = open water, lighter = urban indicator)
+        fill(e, String(attrs.class ?? '').startsWith('open') ? '#7c3aed' : '#a78bfa', 0.5)
+        if (e.polygon) e.polygon.height = new ConstantProperty(0.6)
         break
       case 'water_quality':
         asPoint(e, '#38bdf8', 20, 'W')

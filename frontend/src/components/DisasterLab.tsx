@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import ForecastOutlook from './ForecastOutlook'
+import ValidationCard from './ValidationCard'
+import OptimiserCard from './OptimiserCard'
 import { withRegion } from '../lib/region'
 import { getAsset, getExplainStatus, getModels, getPresets, getQuickscan, postExplain, runFlood, type ExplainResponse, type Explanation,
   type FloodResult, type ModelCard, type Preset, type QuickScan } from '../lib/api'
@@ -295,6 +298,8 @@ export default function DisasterLab() {
   const ex = selectedId ? flood?.explanations[selectedId] : undefined
   return (
     <div className="space-y-3">
+      <ForecastOutlook />
+      <ValidationCard />
       <div className="rounded border border-amber-500/50 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-amber-200">
         Scenario-based estimate — not a prediction · simulated drains, uniform design storms
       </div>
@@ -389,6 +394,7 @@ export default function DisasterLab() {
           </section>
         </>
       )}
+      <OptimiserCard />
     </div>
   )
 }

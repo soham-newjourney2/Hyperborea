@@ -1,1 +1,1 @@
-{"status": "snapshot", "version": "0.1.0", "data_timestamp": "2026-11-07T17:38:51.701804+00:00", "region": "london_stratford", "snapshot_at": "2026-11-11T16:12:06+00:00"}
+{"status": "snapshot", "version": "0.1.0", "data_timestamp": "2026-11-07T17:38:51.701804+00:00", "region": "london_stratford", "auth_required": false, "snapshot_at": "2026-11-11T17:31:12+00:00"}

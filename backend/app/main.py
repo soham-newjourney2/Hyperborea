@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from .api import access, auth, development, environment, graph, health, insight, layers, ml, regions, scenarios, weather
+from .api import access, ask, auth, development, environment, graph, health, insight, layers, ml, optimise, regions, scenarios, validation, warning, weather
 from .core.security import require_admin
 from .core import paths  # noqa: F401  (sets local cache defaults)
 from .core.config import VERSION, get_settings
@@ -36,6 +36,6 @@ api.include_router(health.router)  # public: status only
 api.include_router(auth.router)  # public: login
 # P15: everything else requires an admin JWT (RBAC-ready: role claim checked in require_admin)
 guard = [Depends(require_admin)]
-for r in (regions, layers, weather, graph, scenarios, development, environment, access, ml, insight):
+for r in (regions, warning, validation, optimise, ask, layers, weather, graph, scenarios, development, environment, access, ml, insight):
     api.include_router(r.router, dependencies=guard)
 app.include_router(api)

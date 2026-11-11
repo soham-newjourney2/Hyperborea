@@ -14,6 +14,10 @@
 | Install | `scripts/install_ollama.py` → `local/tools/ollama`; models in `local/ollama/models` (`OLLAMA_MODELS`); nothing installed globally |
 | Inputs | only a facts JSON built from one engine result (scenario, summary counts, the asset's Why? chain, risk index, assumptions, mitigation) |
 
+## Uses
+- P14 plain-language explanation of a scenario result.
+- **P24 ask-the-twin**: (1) parse a question into a JSON intent (Ollama `format` schema; rejected unless every number comes from the question → rule parser instead), (2) phrase the answer from engine facts (same grounding check → template if it fails).
+
 ## Grounding (every LLM answer, before it is shown)
 1. Every number in the output must equal a number in the facts (to the precision written).
 2. No spelled-out numbers above ten (they would dodge check 1).

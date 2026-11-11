@@ -4,6 +4,7 @@ import LayerManager from './components/LayerManager'
 import Legend from './components/Legend'
 import Login from './components/Login'
 import RegionSwitcher from './components/RegionSwitcher'
+import WarningBanner from './components/WarningBanner'
 import { REGION } from './lib/region'
 import MapView from './components/MapView'
 import { AUTH_EVENT, clearSession, currentToken } from './lib/auth'
@@ -15,6 +16,7 @@ const EnvironmentPanel = lazy(() => import('./components/EnvironmentPanel'))
 const RelationshipExplorer = lazy(() => import('./components/RelationshipExplorer'))
 const DisasterLab = lazy(() => import('./components/DisasterLab'))
 const DevelopmentPanel = lazy(() => import('./components/DevelopmentPanel'))
+const AskPanel = lazy(() => import('./components/AskPanel'))
 const AccessPanel = lazy(() => import('./components/AccessPanel'))
 
 type ApiState = { kind: 'checking' } | { kind: 'ok'; health: Health } | { kind: 'offline' }
@@ -80,7 +82,7 @@ function useBootstrap(ok: boolean) {
         const deepLink = q.get('asset') // ?asset=<asset_id>
         if (deepLink) useApp.getState().select(deepLink)
         const tabQ = q.get('tab') // ?tab=weather|relations
-        if (tabQ === 'weather' || tabQ === 'relations' || tabQ === 'disaster' || tabQ === 'develop' || tabQ === 'access')
+        if (tabQ === 'weather' || tabQ === 'relations' || tabQ === 'disaster' || tabQ === 'develop' || tabQ === 'access' || tabQ === 'ask')
           useApp.getState().setRightTab(tabQ)
         const scen = q.get('scenario') // ?scenario=extreme → run preset on load (demo links)
         if (scen) {
@@ -128,7 +130,7 @@ function WeatherChip() {
 
 function Tabs() {
   const { rightTab, setRightTab } = useApp()
-  const tab = (id: 'inspector' | 'relations' | 'disaster' | 'develop' | 'access' | 'weather', label: string) => (
+  const tab = (id: 'inspector' | 'relations' | 'disaster' | 'develop' | 'access' | 'weather' | 'ask', label: string) => (
     <button
       onClick={() => setRightTab(id)}
       className={`flex-1 border-b-2 px-1 py-2 text-[10px] font-semibold uppercase tracking-wider ${
@@ -146,6 +148,7 @@ function Tabs() {
       {tab('develop', 'Develop')}
       {tab('access', 'Access')}
       {tab('weather', 'Env')}
+      {tab('ask', 'Ask')}
     </div>
   )
 }
@@ -167,14 +170,15 @@ export default function App() {
     window.addEventListener(AUTH_EVENT, onAuth)
     return () => window.removeEventListener(AUTH_EVENT, onAuth)
   }, [])
-  // live API → admin login required; unreachable API → offline snapshot without login (P04)
+  // P20: login only when the API says auth is required (default off); offline snapshot never needs it (P04)
   const live = api.kind === 'ok' && api.health.status !== 'snapshot'
-  const ready = api.kind === 'ok' && (authed || !live)
+  const needsLogin = live && api.kind === 'ok' && api.health.auth_required === true
+  const ready = api.kind === 'ok' && (authed || !needsLogin)
   useBootstrap(ready)
   useWeatherPoll(ready)
   const region = useApp((s) => s.region)
   const rightTab = useApp((s) => s.rightTab)
-  if (live && !authed) return <Login onDone={() => setAuthed(true)} />
+  if (needsLogin && !authed) return <Login onDone={() => setAuthed(true)} />
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-4 py-2">
@@ -187,13 +191,14 @@ export default function App() {
         <div className="flex items-center gap-3">
           <RegionSwitcher />
           <ApiBadge state={api} />
-          {authed && (
+          {needsLogin && authed && (
             <button onClick={() => { clearSession(); setAuthed(false) }} className="text-[11px] text-slate-500 hover:text-slate-200">
               Sign out
             </button>
           )}
         </div>
       </header>
+      {ready && <WarningBanner />}
 
       <div className="flex min-h-0 flex-1">
         <aside className="flex w-72 shrink-0 flex-col overflow-y-auto border-r border-slate-800 bg-slate-950/90">
@@ -222,7 +227,7 @@ export default function App() {
               <AssetInspector />
             ) : (
               <Suspense fallback={<p className="text-xs text-slate-500">Loading…</p>}>
-                {rightTab === 'relations' ? <RelationshipExplorer /> : rightTab === 'disaster' ? <DisasterLab /> : rightTab === 'develop' ? <DevelopmentPanel /> : rightTab === 'access' ? <AccessPanel /> : <EnvironmentPanel />}
+                {rightTab === 'relations' ? <RelationshipExplorer /> : rightTab === 'disaster' ? <DisasterLab /> : rightTab === 'develop' ? <DevelopmentPanel /> : rightTab === 'access' ? <AccessPanel /> : rightTab === 'ask' ? <AskPanel /> : <EnvironmentPanel />}
               </Suspense>
             )}
           </div>
