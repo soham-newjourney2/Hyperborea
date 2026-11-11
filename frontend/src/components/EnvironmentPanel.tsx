@@ -45,14 +45,17 @@ function Air() {
   if (err) return <p className="text-xs text-amber-300">Air quality unavailable (no snapshot).</p>
   if (!a) return <p className="text-xs text-slate-500">Loading air quality…</p>
   const nowKey = a.window.to
+  const bands = a.pm25_bands ?? PM25_BANDS
+  const idx = a.index?.name ?? 'NAQI'
+  const tz = a.timezone === 'Asia/Kolkata' || !a.timezone ? 'IST' : a.timezone
   const series = a.hourly.map((h) => ({ ...h, t: h.time.slice(5, 13).replace('T', ' ') }))
   return (
     <div className="space-y-2.5">
       <Card title="Air quality · pilot (24 h)" right={<ProvenanceBadge status={a.data_status} small />}>
         <div className="flex items-center gap-3">
           <div className="rounded px-2 py-1 text-center" style={{ backgroundColor: `${a.color}26`, boxShadow: `inset 0 0 0 1px ${a.color}` }}>
-            <div className="text-2xl font-semibold tabular-nums text-slate-50">{a.naqi ?? '—'}</div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-300">NAQI</div>
+            <div className="text-2xl font-semibold tabular-nums text-slate-50">{a.aqi ?? a.naqi ?? '—'}</div>
+            <div className="text-[10px] uppercase tracking-wider text-slate-300">{idx}</div>
           </div>
           <div>
             <div className="text-sm font-semibold" style={{ color: a.color ?? undefined }}>{a.category}</div>
@@ -70,15 +73,15 @@ function Air() {
           ))}
         </dl>
         <p className="mt-1.5 text-[10px] leading-snug text-slate-500">
-          {a.note}. Window {a.window.from.replace('T', ' ')} → {a.window.to.replace('T', ' ')} IST · fetched {a.fetched_at.slice(0, 16).replace('T', ' ')} UTC.
-          Categories: CPCB NAQI (2014).
+          {a.note}. Window {a.window.from.replace('T', ' ')} → {a.window.to.replace('T', ' ')} {tz} · fetched {a.fetched_at.slice(0, 16).replace('T', ' ')} UTC.
+          Categories: {a.index?.source ?? 'CPCB NAQI (2014)'}.
         </p>
       </Card>
       <Card title="PM2.5 · hourly, past 24 h + 72 h forecast" right={<span className="text-[10px] text-slate-500">µg/m³</span>}>
-        <div className="h-40" role="img" aria-label="Hourly PM2.5 with NAQI category bands">
+        <div className="h-40" role="img" aria-label={`Hourly PM2.5 with ${idx} category bands`}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={series} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
-              {PM25_BANDS.map(([lo, hi, col, name]) => (
+              {bands.map(([lo, hi, col, name]) => (
                 <ReferenceArea key={name} y1={lo} y2={hi} fill={col} fillOpacity={0.07} stroke="none" ifOverflow="hidden" />
               ))}
               <CartesianGrid vertical={false} stroke={GRID} />
@@ -90,11 +93,11 @@ function Air() {
                 content={({ active, payload }) => {
                   const p = active && payload?.[0]?.payload
                   if (!p) return null
-                  const band = PM25_BANDS.find(([lo, hi]) => p.pm2_5 >= lo && p.pm2_5 < hi)
+                  const band = bands.find(([lo, hi]) => p.pm2_5 >= lo && p.pm2_5 < hi)
                   return (
                     <div className="rounded border border-slate-700 bg-slate-950/95 px-2 py-1 text-[11px] text-slate-200">
                       <div className="font-semibold">{p.pm2_5} µg/m³ · {band?.[3] ?? ''} band</div>
-                      <div className="text-slate-400">{p.time.replace('T', ' ')} IST (hourly value, not 24-h mean)</div>
+                      <div className="text-slate-400">{p.time.replace('T', ' ')} {tz} (hourly value, not 24-h mean)</div>
                     </div>
                   )
                 }}
@@ -104,7 +107,7 @@ function Air() {
           </ResponsiveContainer>
         </div>
         <ul className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-slate-400">
-          {PM25_BANDS.map(([lo, hi, col, name]) => (
+          {bands.map(([lo, hi, col, name]) => (
             <li key={name} className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: col, opacity: 0.7 }} />
               {name} {lo}–{hi}

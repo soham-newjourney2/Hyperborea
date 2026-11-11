@@ -91,7 +91,7 @@ function CurrentCard() {
         ))}
       </dl>
       <p className="mt-2 text-[10px] text-slate-500">
-        Model forecast for {fmtTime(c.time)} IST · fetched {fmtTime(w.fetched_at)}
+        Model forecast for {fmtTime(c.time)} {tzLabel(w.location.timezone)} · fetched {fmtTime(w.fetched_at)}
         {w.stale && w.stale_reason ? ` · ${w.stale_reason}` : ''}
       </p>
     </Card>
@@ -124,7 +124,7 @@ function RainForecast() {
                     <TipBox
                       lines={[
                         `${h.precipitation.toFixed(1)} mm/h`,
-                        `${h.time.replace('T', ' ')} IST`,
+                        `${h.time.replace('T', ' ')} ${tzLabel(w?.location.timezone)}`,
                         h.precipitation_probability != null ? `probability ${h.precipitation_probability}%` : '',
                       ].filter(Boolean)}
                     />
@@ -147,7 +147,7 @@ function ClimateCharts({ c }: { c: ClimateSummary }) {
   return (
     <>
       <Card title={`Wettest day each year (mm) · ${a}–${b}`} right={<ProvenanceBadge status={c.data_status} small />}>
-        <div className="h-36" role="img" aria-label="Annual maximum one-day rainfall with IMD heavy and very heavy thresholds">
+        <div className="h-36" role="img" aria-label={`Annual maximum one-day rainfall with ${t.label ?? 'IMD thresholds'} (heavy, very heavy)`}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={c.years} margin={{ top: 8, right: 34, bottom: 0, left: -18 }} barCategoryGap={1}>
               <CartesianGrid vertical={false} stroke={GRID} />
@@ -170,12 +170,12 @@ function ClimateCharts({ c }: { c: ClimateSummary }) {
         </div>
         <p className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-500">
           <span className="inline-block w-4 border-t border-dashed border-slate-500" />
-          IMD thresholds: heavy {t.heavy} · very heavy {t.very_heavy} mm/day (extremely heavy ≥ {t.extremely_heavy})
+          {t.label ?? 'IMD thresholds'}: heavy {t.heavy} · very heavy {t.very_heavy} mm/day (extremely heavy ≥ {t.extremely_heavy})
         </p>
       </Card>
 
       <Card title={`Heavy-rain days (≥ ${t.heavy} mm) per year`}>
-        <div className="h-24" role="img" aria-label="Number of IMD heavy rain days per year">
+        <div className="h-24" role="img" aria-label={`Heavy rain days per year (${t.label ?? 'IMD thresholds'})`}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={c.years} margin={{ top: 4, right: 4, bottom: 0, left: -18 }} barCategoryGap={1}>
               <CartesianGrid vertical={false} stroke={GRID} />
@@ -241,6 +241,9 @@ function Presets({ presets }: { presets: Preset[] }) {
     </Card>
   )
 }
+
+// P18: forecast times come in the pilot's timezone (Open-Meteo `timezone`)
+const tzLabel = (tz?: string) => (!tz || tz === 'Asia/Kolkata' ? 'IST' : tz)
 
 export default function WeatherPanel() {
   const [climate, setClimate] = useState<ClimateSummary | null>(null)

@@ -21,6 +21,11 @@ URL = "https://archive-api.open-meteo.com/v1/archive"
 START = date(1981, 1, 1)
 # IMD daily rainfall categories (mm/day): heavy 64.5–115.5, very heavy 115.6–204.4, extremely heavy ≥ 204.5
 IMD = {"heavy": 64.5, "very_heavy": 115.6, "extremely_heavy": 204.5}
+# P18: regions outside India set `rain_thresholds` in regions.yaml (e.g. ETCCDI-style R20/R30/R50 mm)
+_RT = R.cfg().get("rain_thresholds") or {}
+THRESH = {k: float(_RT[k]) for k in ("heavy", "very_heavy", "extremely_heavy")} if _RT else IMD
+THRESH_META = ({"source_id": _RT["source_id"], "label": _RT["label"]} if _RT else
+               {"source_id": "imd_thresholds", "label": "IMD thresholds"})
 OUT = R.data_dir("processed")
 
 
@@ -57,7 +62,7 @@ def summarise(df: pd.DataFrame, grid: dict, end: date) -> dict:
         "total_mm": g.precip_mm.sum().round(1),
         "jjas_mm": full[full.month.between(6, 9)].groupby("year").precip_mm.sum().round(1),
         "max_1day_mm": g.precip_mm.max().round(1),
-        **{f"{k}_days": g.precip_mm.apply(lambda s, t=t: int((s >= t).sum())) for k, t in IMD.items()},
+        **{f"{k}_days": g.precip_mm.apply(lambda s, t=t: int((s >= t).sum())) for k, t in THRESH.items()},
         "tmax_mean_c": g.tmax_c.mean().round(2),
         "tmin_mean_c": g.tmin_c.mean().round(2),
     }).reset_index()
@@ -70,7 +75,7 @@ def summarise(df: pd.DataFrame, grid: dict, end: date) -> dict:
         "grid": {**grid, "resolution": "0.25° (ERA5)"},
         "period": {"start": START.isoformat(), "end": end.isoformat(),
                    "full_years": [int(yrs.min()), int(yrs.max())], "n_years": int(len(yrs))},
-        "thresholds_mm_day": {**IMD, "source_id": "imd_thresholds"},
+        "thresholds_mm_day": {**THRESH, **THRESH_META},
         "stats": {
             "annual_total_mean_mm": round(float(years.total_mm.mean()), 1),
             "jjas_share_pct": round(float(100 * years.jjas_mm.sum() / years.total_mm.sum()), 1),

@@ -4,6 +4,7 @@ import LayerManager from './components/LayerManager'
 import Legend from './components/Legend'
 import Login from './components/Login'
 import RegionSwitcher from './components/RegionSwitcher'
+import { REGION } from './lib/region'
 import MapView from './components/MapView'
 import { AUTH_EVENT, clearSession, currentToken } from './lib/auth'
 import { getHealth, getLayers, getRegion, getWeatherForecast, runFlood, type Health } from './lib/api'
@@ -240,6 +241,7 @@ export default function App() {
         <span className="ml-auto">
           © OpenStreetMap contributors (ODbL) · Sentinel-2 cloudless by EOX · Weather & CAMS air quality via Open-Meteo.com ·
           © ESA WorldCover 2021 · Contains modified Copernicus Sentinel data
+          {REGION === 'london_stratford' && ' · Terrain: © Environment Agency copyright and/or database right 2022 (OGL v3)'}
         </span>
       </footer>
     </div>

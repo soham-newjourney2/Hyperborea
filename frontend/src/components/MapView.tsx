@@ -410,6 +410,8 @@ function applyQuality(viewer: Viewer, q: Quality) {
 
 function flyHome(viewer: Viewer, region: Region, duration = 2) {
   const [lon, lat] = region.centroid
+  // P18: 11:00 local solar time at the pilot (UTC = 11 h − lon/15) on the data date, any region
+  viewer.clock.currentTime = JulianDate.addHours(JulianDate.fromIso8601('2026-11-06T11:00:00Z'), -lon / 15, new JulianDate())
   viewer.camera.flyTo({
     // ~1.5 km up, looking north at 36° so the pilot fills the frame and facades are visible.
     destination: Cartesian3.fromDegrees(lon + 0.004, lat - 0.0185, 1450),

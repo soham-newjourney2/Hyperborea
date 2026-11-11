@@ -1,0 +1,74 @@
+{
+ "method": "NDWI (McFeeters 1996) threshold \u2014 spectral index, not machine learning (D-21)",
+ "threshold": 0.1,
+ "min_area_m2": 400,
+ "seasons": {
+  "summer": {
+   "window": "2025-05-01/2025-09-30",
+   "scenes": [
+    {
+     "id": "S2A_MSIL2A_20250817T105651_R094_T30UXC_20250817T150514",
+     "date": "2025-08-17",
+     "cloud_pct": 0.004421
+    },
+    {
+     "id": "S2C_MSIL2A_20250825T105641_R094_T30UXC_20250825T154713",
+     "date": "2025-08-25",
+     "cloud_pct": 0.021966
+    },
+    {
+     "id": "S2B_MSIL2A_20250502T105619_R094_T30UXC_20250502T135350",
+     "date": "2025-05-02",
+     "cloud_pct": 0.054126
+    },
+    {
+     "id": "S2A_MSIL2A_20250502T110701_R137_T30UYC_20250502T181413",
+     "date": "2025-05-02",
+     "cloud_pct": 0.11086
+    },
+    {
+     "id": "S2C_MSIL2A_20250825T105641_R094_T30UYC_20250825T154713",
+     "date": "2025-08-25",
+     "cloud_pct": 0.160072
+    }
+   ],
+   "polygons": 0,
+   "water_area_m2": 0,
+   "share_inside_osm_water_pct": null
+  },
+  "winter": {
+   "window": "2025-11-01/2026-03-31",
+   "scenes": [
+    {
+     "id": "S2B_MSIL2A_20260318T105659_R094_T30UXC_20260318T145537",
+     "date": "2026-03-18",
+     "cloud_pct": 0.008112
+    },
+    {
+     "id": "S2B_MSIL2A_20260318T105659_R094_T30UYC_20260318T145537",
+     "date": "2026-03-18",
+     "cloud_pct": 0.01077
+    },
+    {
+     "id": "S2A_MSIL2A_20260318T110731_R137_T30UYC_20260318T180922",
+     "date": "2026-03-18",
+     "cloud_pct": 0.012491
+    },
+    {
+     "id": "S2A_MSIL2A_20251225T110511_R094_T30UXC_20251225T145009",
+     "date": "2025-12-25",
+     "cloud_pct": 0.020028
+    },
+    {
+     "id": "S2A_MSIL2A_20260318T110731_R137_T30UXC_20260318T180922",
+     "date": "2026-03-18",
+     "cloud_pct": 0.028125
+    }
+   ],
+   "polygons": 1,
+   "water_area_m2": 1200,
+   "share_inside_osm_water_pct": 0.0
+  }
+ },
+ "generated_at": "2026-11-07T17:39:57+00:00"
+}

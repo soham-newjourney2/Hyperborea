@@ -85,5 +85,6 @@ def report(result_id: str) -> dict:
                         "Drainage and electrical networks are simulated, not municipal / utility records.",
                         "Travel times are free-flow estimates, not live traffic.",
                         "Risk scores are indices (0–1), not probabilities."],
-        "attributions": ATTRIBUTIONS, "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "attributions": ATTRIBUTIONS + (["Terrain: © Environment Agency copyright and/or database right 2022 (LiDAR DTM, OGL v3)"]
+                                         if cfg().get("dem") == "ea_lidar_dtm" else []), "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }

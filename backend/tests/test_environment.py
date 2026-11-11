@@ -64,3 +64,41 @@ def test_water_points_have_units_dates_and_status():
         assert f["properties"]["data_status"] in {"simulated", "curated"} and f["geometry"]["type"] == "Point"
     if body["demo"]:
         assert "DEMO DATA" in body["banner"]
+
+
+@pytest.mark.parametrize("pol,conc,level", [
+    ("pm2_5", 0, 1), ("pm2_5", 11.9, 1), ("pm2_5", 12, 2), ("pm2_5", 35.9, 3), ("pm2_5", 36, 4), ("pm2_5", 71, 10),
+    ("pm10", 50.5, 3), ("pm10", 101, 10), ("nitrogen_dioxide", 200, 3), ("nitrogen_dioxide", 201, 4),
+    ("ozone", 100.9, 3), ("ozone", 241, 10),
+])
+def test_daqi_levels_match_gov_uk_bands(pol, conc, level):
+    assert air.daqi_level(pol, conc) == level
+
+
+def test_daqi_summary_uses_worst_no2_hour_and_highest_level():
+    hours = [f"2026-11-07T{h:02d}:00" for h in range(24)]
+    raw = {"timezone": "Europe/London", "hourly": {
+        "time": hours, "pm2_5": [10.0] * 24, "pm10": [15.0] * 24, "ozone": [40.0] * 24,
+        "nitrogen_dioxide": [50.0] * 23 + [210.0]}}  # one bad hour → DAQI 4 (hourly metric), NAQI would average it
+    s = air.summarise(raw, now_local="2026-11-07T23:00", scheme="daqi")
+    assert s["index"]["name"] == "DAQI" and s["naqi"] is None
+    assert s["sub_index"]["nitrogen_dioxide"] == 4 and s["aqi"] == 4 and s["dominant"] == "nitrogen_dioxide"
+    assert s["category"].startswith("Moderate") and len(s["pm25_bands"]) == 10
+
+
+@pytest.mark.parametrize("pol,conc,level", [
+    ("pm2_5", 16.7, 1), ("pm2_5", 16.75, 2), ("pm2_5", 37.5, 4), ("pm2_5", 50, 5),
+    ("pm10", 49.9, 2), ("ozone", 131.3, 2), ("ozone", 400, 5), ("nitrogen_dioxide", 150.4, 3),
+])
+def test_nsw_aqc_levels(pol, conc, level):
+    assert air.banded_level("nsw_aqc", pol, conc) == level
+
+
+def test_nsw_aqc_summary_worst_hour_category():
+    hours = [f"2026-11-11T{h:02d}:00" for h in range(24)]
+    raw = {"timezone": "Australia/Sydney", "hourly": {
+        "time": hours, "pm2_5": [8.0] * 24, "pm10": [12.0] * 24, "nitrogen_dioxide": [20.0] * 24,
+        "ozone": [60.0] * 23 + [200.0]}}  # one hour of 200 µg/m³ O3 → Poor
+    s = air.summarise(raw, now_local="2026-11-11T23:00", scheme="nsw_aqc")
+    assert s["index"]["name"] == "NSW AQC" and s["category"] == "Poor" and s["dominant"] == "ozone"
+    assert len(s["pm25_bands"]) == 5

@@ -1,0 +1,21 @@
+# UK Daily Air Quality Index (DAQI), Defra/COMEAP — levels 1–10 from concentration bands (µg/m³).
+# Source: GOV.UK "Pollutant concentrations for the Daily Air Quality Index (DAQI)" (OGL v3), checked 2026-11-07.
+# Averaging: PM2.5 / PM10 = 24-h (running) mean; NO2 = hourly mean (we take the max hour of the last 24 h);
+# O3 = running 8-h mean (max of the last 24 h). SO2 is not in the CAMS feed we use.
+# lower[i] = lowest concentration of level i+2 (level 1 starts at 0); the index is the highest pollutant level.
+levels:
+  - {level: 1,  band: Low,       color: "#9CFF9C"}
+  - {level: 2,  band: Low,       color: "#31FF00"}
+  - {level: 3,  band: Low,       color: "#31CF00"}
+  - {level: 4,  band: Moderate,  color: "#FFFF00"}
+  - {level: 5,  band: Moderate,  color: "#FFCF00"}
+  - {level: 6,  band: Moderate,  color: "#FF9A00"}
+  - {level: 7,  band: High,      color: "#FF6464"}
+  - {level: 8,  band: High,      color: "#FF0000"}
+  - {level: 9,  band: High,      color: "#990000"}
+  - {level: 10, band: Very High, color: "#CE30FF"}
+lower:
+  pm2_5:            [12, 24, 36, 42, 48, 54, 59, 65, 71]
+  pm10:             [17, 34, 51, 59, 67, 76, 84, 92, 101]
+  nitrogen_dioxide: [68, 135, 201, 268, 335, 401, 468, 535, 601]
+  ozone:            [34, 67, 101, 121, 141, 161, 188, 214, 241]
