@@ -1,0 +1,62 @@
+{
+  "source_id": "osm",
+  "fetched_at": "2026-11-11T16:06:34+00:00",
+  "boundary": "bnd_cur_sydney_green_square",
+  "buffer_m": 2000,
+  "bbox_4326": [
+    151.16837158234378,
+    -33.93403196586635,
+    151.23062875114113,
+    -33.88196793925612
+  ],
+  "osmnx": "2.1.1",
+  "via": "geofabrik_pbf",
+  "url": "https://download.bbbike.org/osm/bbbike/Sydney/Sydney.osm.pbf",
+  "osm_data_at": "2026-11-07T00:00:00Z",
+  "tags": {
+    "buildings": {
+      "building": true
+    },
+    "amenities": {
+      "amenity": [
+        "hospital",
+        "clinic",
+        "school",
+        "college",
+        "university",
+        "fire_station",
+        "police"
+      ],
+      "railway": [
+        "station",
+        "halt"
+      ],
+      "station": [
+        "subway"
+      ]
+    },
+    "power": {
+      "power": true
+    },
+    "waterways": {
+      "waterway": true,
+      "natural": [
+        "water",
+        "wetland"
+      ]
+    },
+    "landuse": {
+      "landuse": true
+    }
+  },
+  "counts": {
+    "buildings": 14377,
+    "amenities": 104,
+    "power": 1157,
+    "waterways": 160,
+    "landuse": 1328,
+    "drive_edges": 6158,
+    "walk_edges": 37614
+  },
+  "licence": "ODbL 1.0 \u2014 \u00a9 OpenStreetMap contributors"
+}

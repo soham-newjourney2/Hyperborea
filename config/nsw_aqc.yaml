@@ -1,0 +1,20 @@
+# NSW Air Quality Categories (AQC), NSW Government — 5 categories from pollutant concentration bands.
+# Bands = 0.67 / 1 / 1.5 / 2 × the national NEPM standard of each pollutant (pattern of the published NSW tables,
+# checked 2026-11-11 via NSW health-advice + station pages: PM2.5 24-h 16.75/25/37.5/50 µg/m³; PM10 24-h
+# 33.5/50/75/100 µg/m³; O3 1-h 6.7/10/15/20 pphm; NO2 1-h 5.36/8/12/16 pphm).
+# O3 / NO2 converted pphm → µg/m³ at 25 °C, 1 atm (assumption: O3 1 pphm = 19.6, NO2 1 pphm = 18.8 µg/m³).
+# Stats: PM = 24-h mean; O3 + NO2 = worst 1-h value of the last 24 h. Category = worst pollutant.
+levels:
+  - {level: 1, band: Good,           color: "#31A354"}
+  - {level: 2, band: Fair,           color: "#F2C618"}
+  - {level: 3, band: Poor,           color: "#F28E2B"}
+  - {level: 4, band: Very poor,      color: "#D62728"}
+  - {level: 5, band: Extremely poor, color: "#7B2D26"}
+stat: {pm2_5: mean24, pm10: mean24, nitrogen_dioxide: max1h, ozone: max1h}
+lower:                       # lowest concentration (µg/m³) of levels 2..5
+  pm2_5:            [16.75, 25, 37.5, 50]
+  pm10:             [33.5, 50, 75, 100]
+  nitrogen_dioxide: [100.8, 150.4, 225.6, 300.8]
+  ozone:            [131.3, 196.0, 294.0, 392.0]
+pm25_chart_max: 70
+source: "NSW Air Quality Categories (NSW Government); O3/NO2 bands converted from pphm at 25 °C"

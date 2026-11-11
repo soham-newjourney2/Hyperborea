@@ -1,0 +1,74 @@
+{
+ "model": "HistGradientBoostingClassifier",
+ "sklearn": "1.9.1",
+ "features": [
+  "rain_mm_h",
+  "duration_h",
+  "condition_scale",
+  "catchment_m2",
+  "runoff_c",
+  "upstream_ca_m2",
+  "upstream_area_m2",
+  "n_upstream",
+  "capacity_m3s",
+  "condition_factor",
+  "diameter_m",
+  "slope",
+  "demand_ratio"
+ ],
+ "training": {
+  "engine_runs": 2000,
+  "rows": 810000,
+  "train_rows": 624000,
+  "test_rows": 186000,
+  "positive_rate": 0.1648,
+  "sampling": "Latin hypercube",
+  "bounds": {
+   "rain_mm_h": [
+    5,
+    120
+   ],
+   "duration_h": [
+    0.5,
+    6
+   ],
+   "condition_scale": [
+    0.6,
+    1.2
+   ]
+  },
+  "split": "held-out spatial blocks (500 m grid, 4/18 blocks, 93 of 405 drains)",
+  "seed": 42,
+  "iterations": 157
+ },
+ "surrogate": {
+  "precision": 0.828,
+  "recall": 0.887,
+  "f1": 0.857,
+  "roc_auc": 0.987
+ },
+ "baseline": {
+  "rule": "overloaded if rain \u2265 67 mm/h (tuned on train F1)",
+  "precision": 0.259,
+  "recall": 0.717,
+  "f1": 0.38,
+  "roc_auc": 0.711
+ },
+ "permutation_importance_auc": {
+  "demand_ratio": 0.4123,
+  "capacity_m3s": 0.0232,
+  "catchment_m2": 0.0092,
+  "condition_factor": 0.0089,
+  "slope": 0.0039,
+  "upstream_ca_m2": 0.0007,
+  "upstream_area_m2": 0.0006,
+  "rain_mm_h": 0.0001,
+  "condition_scale": 0.0001,
+  "duration_h": -0.0,
+  "runoff_c": 0.0,
+  "n_upstream": -0.0001,
+  "diameter_m": -0.0006
+ },
+ "model_bytes": 251470,
+ "generated_at": "2026-11-11T16:11:22+00:00"
+}

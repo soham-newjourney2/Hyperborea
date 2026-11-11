@@ -52,6 +52,11 @@ regions:
     aq_index: daqi             # Defra Daily AQI (P18)
     design_storm_mm_h: 30      # assumed (UK surface-water sewer practice) — P18 documents it
     osm_pbf: https://download.geofabrik.de/europe/united-kingdom/england/greater-london-latest.osm.pbf
+    dem: ea_lidar_dtm          # EA LIDAR Composite DTM 2022 (bare earth, OGL v3) via WCS, 5 m
+    rain_thresholds: {heavy: 20, very_heavy: 30, extremely_heavy: 50, source_id: etccdi_thresholds,
+                      label: "ETCCDI-style thresholds (R20/R30/R50 mm), not an official UK category"}
+    s2_window: 2025-05-01/2025-09-30          # summer: least cloud, leaf-on NDVI
+    water_seasons: {summer: 2025-05-01/2025-09-30, winter: 2025-11-01/2026-03-31}
     story: Olympic Park and Lea valley; flash surface-water floods on 12 and 25 July 2021
   - id: sydney_green_square
     name: Green Square & Alexandria
@@ -63,4 +68,9 @@ regions:
     metric_crs: 32756          # UTM 56S
     aq_index: nsw_aqc          # NSW Air Quality Categories (P19)
     design_storm_mm_h: 40      # assumed (minor-system design) — P19 documents it
+    osm_pbf: https://download.bbbike.org/osm/bbbike/Sydney/Sydney.osm.pbf   # BBBike city extract (Geofabrik has only all of Australia, 974 MB)
+    rain_thresholds: {heavy: 20, very_heavy: 30, extremely_heavy: 50, source_id: etccdi_thresholds,
+                      label: "ETCCDI-style thresholds (R20/R30/R50 mm), not an official BoM category"}
+    s2_window: 2025-06-01/2025-09-30          # austral winter: driest, least cloud
+    water_seasons: {dry: 2025-06-01/2025-09-30, wet: 2026-01-15/2026-04-15}
     story: Urban renewal on the former Sheas Creek wetland; mapped overland-flow flood area
