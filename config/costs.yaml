@@ -1,0 +1,18 @@
+# P23 upgrade optimiser — ASSUMED unit costs (order-of-magnitude, for ranking only; not engineering estimates).
+# Replace with municipal schedules of rates (e.g. state PWD SoR, UK SPONS, Rawlinsons AU) before any real use.
+currency_by_region: {sector_v: INR, chennai_velachery: INR, pune_kharadi: INR, london_stratford: GBP, sydney_green_square: AUD}
+currencies:
+  INR: {symbol: "₹", drain_upsize_per_m: 18000, plinth_raise_per_transformer: 250000, detention_per_m3: 6000,
+        default_budget: 20000000, budget_step: 1000000}
+  GBP: {symbol: "£", drain_upsize_per_m: 900, plinth_raise_per_transformer: 20000, detention_per_m3: 350,
+        default_budget: 250000, budget_step: 25000}
+  AUD: {symbol: "A$", drain_upsize_per_m: 1500, plinth_raise_per_transformer: 35000, detention_per_m3: 600,
+        default_budget: 400000, budget_step: 25000}
+plinth_raise_to_m: 1.2        # above the 1.0 m modelled ponding cap
+detention_max_tank_m3: 2000   # per catchment; tank sized to that catchment's overflow volume (rounded up to 50 m³)
+max_steps: 25
+objective:                    # risk score = Σ weight × metric (lower is better) — weights are value judgements, shown in the UI
+  buildings_exposed: 1
+  buildings_power_loss: 1
+  facilities_affected: 25
+  road_km_impassable: 20

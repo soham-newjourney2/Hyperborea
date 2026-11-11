@@ -130,9 +130,12 @@ def road_class(h) -> str:
 
 
 def run_flood(ctx: FloodContext, params: dict, overlay: dict | None = None) -> dict:
-    """overlay (P09, scenario only): {'extra_inflow': {drain: m³/s}, 'capacity': {drain: full-flow m³/s}}."""
+    """overlay (scenario only): {'extra_inflow': {drain: m³/s}, 'capacity': {drain: full-flow m³/s}} (P09);
+    P23: {'plinth': {transformer: m}} raised plinths, {'storage_m3': {catchment: m³}} detention holding overflow."""
     extra = (overlay or {}).get("extra_inflow", {})
     cap_override = (overlay or {}).get("capacity", {})
+    plinth_override = (overlay or {}).get("plinth", {})
+    storage = (overlay or {}).get("storage_m3", {})
     fr, rr = flood_rules(), risk_rules()
     rain, dur, scale = float(params["rain_mm_h"]), float(params["duration_h"]), float(params.get("condition_scale", 1.0))
     secs = dur * 3600
@@ -164,7 +167,9 @@ def run_flood(ctx: FloodContext, params: dict, overlay: dict | None = None) -> d
     for d, r in D.items():
         cid = ctx.drain[d]["catchment_id"]
         if r["overflow_m3s"] > 0 and cid in ctx.cat:
-            vol = r["overflow_m3s"] * secs
+            vol = max(r["overflow_m3s"] * secs - storage.get(cid, 0.0), 0.0)  # P23: detention tank captures overflow first
+            if vol <= 0:
+                continue
             raw = vol / (ctx.cat[cid]["area_m2"] * frac)
             C[cid] = {"overflow_m3": round(vol, 1), "depth_m": round(min(raw, dmax), 3), "capped": raw > dmax,
                       "drain_id": d}
@@ -187,7 +192,7 @@ def run_flood(ctx: FloodContext, params: dict, overlay: dict | None = None) -> d
     TS = {}
     for tid, t in ctx.trf.items():
         c = C.get(t["catchment_id"])
-        if c and c["depth_m"] >= t["plinth_m"]:
+        if c and c["depth_m"] >= plinth_override.get(tid, t["plinth_m"]):
             TS[tid] = {"depth_m": c["depth_m"], "via": t["catchment_id"], "state": "shutdown",
                        "buildings": len(t["buildings"]), "facilities": t["facilities"]}
     BP = {b: tid for tid in TS for b in ctx.trf[tid]["buildings"]}
