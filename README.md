@@ -10,8 +10,6 @@ a hop-by-hop **Why?** explanation.
 > The drainage and electrical networks are **simulated** (no public records exist) and labelled so in data and UI.
 > Scenario results are *estimates, not predictions*; risk scores are *indices, not probabilities*.
 
-![Command centre](presentation/screens/P03_command_centre.png)
-
 ## What it does
 | Module | Highlights | Screens |
 |---|---|---|

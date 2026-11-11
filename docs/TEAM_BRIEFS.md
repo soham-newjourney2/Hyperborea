@@ -1,6 +1,6 @@
 # Team briefs (teammates — no Claude Code access to the repo)
 
-Inputs from the build: `presentation/screens/*.png` (after each phase), `docs/LOG.md`, `docs/ARCHITECTURE.md` + `docs/DEMO_SCRIPT.md` (P15), model cards in `models/model_cards/`. Ask the user for the latest files; don't edit the repo directly — send files to the user.
+Inputs from the build: screenshots (ask the user — not kept in the repo), `docs/LOG.md`, `docs/ARCHITECTURE.md` + `docs/DEMO_SCRIPT.md` (P15), model cards in `models/model_cards/`. Ask the user for the latest files; don't edit the repo directly — send files to the user.
 
 **Honesty rules for all materials:** say *simulated* for drainage/electrical networks; *modelled* for weather/AQ/risk; risk scores are *indices, not probabilities*; outputs are *scenario estimates, not predictions or approvals*. Don't claim novelty or accuracy we haven't measured.
 

@@ -92,7 +92,7 @@ phases/P01..P19.md     docs/{LOG,DECISIONS,DATA_SOURCES,SUBMISSION_CHECKLIST,TEA
 frontend/              backend/{app/{api,core,services},engine,tests,requirements.txt,Dockerfile}
 pipelines/             config/ (scenarios.yaml, norms.yaml)      scripts/ (env.ps1, dev.ps1, deploy.ps1, …)
 data/regions/<id>/{raw,processed,curated,synthetic,snapshots}   (id: sector_v, chennai_velachery, pune_kharadi, london_stratford, sydney_green_square)
-models/regions/<id>/ (surrogate + model cards) · models/model_cards/ (shared: LLM explainer)   presentation/screens/
+models/regions/<id>/ (surrogate + model cards) · models/model_cards/ (shared: LLM explainer)
 local/regions/<id>/{osm,rasters,cache} (OSM extract, DEM; cache ignored) · local/{tools,ollama} (LLM, ignored) · local/cache (ignored)
 frontend/public/{snapshots,overlays}/regions/<id>/ + snapshots/regions.json
 ```
