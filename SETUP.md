@@ -123,7 +123,7 @@ Use the **instruct-2507** build — the plain `qwen3:4b` is a "thinking" model a
 . .\scripts\env.ps1
 pytest backend/tests -q                # backend: data integrity, engines, endpoints, auth, regions (93 tests)
 cd frontend; npm run lint; npm test; npm run build; cd ..   # frontend: oxlint, vitest, type-check + production build
-python scripts/audit_data.py           # provenance audit of every region (must say PASS; report written to docs/, local only)
+python scripts/audit_data.py           # provenance audit of every region (must say PASS; report in local/cache/)
 ```
 
 ---
@@ -161,7 +161,7 @@ $env:HYPERBOREA_REGION='chennai_velachery'; python scripts/make_snapshots.py; Re
 
 Downloads during rebuilds: Geofabrik OSM extracts (eastern 248 MB, southern 559 MB, western 222 MB — already in
 `local/regions/<id>/osm` via LFS), Copernicus DEM, ESA WorldCover and Sentinel-2 tiles (Microsoft Planetary Computer, no account
-needed), ERA5/forecast/CAMS air quality (Open-Meteo, no key). Licences and attributions: README → "Data, licences and attribution".
+needed), ERA5/forecast/CAMS air quality (Open-Meteo, no key). Sources and licences: `docs/DATA.md`.
 
 ---
 
@@ -189,4 +189,4 @@ Space secrets: `CORS_ORIGINS` (plus `AUTH_REQUIRED`, `ADMIN_PASSWORD`, `JWT_SECR
 | LLM option greyed out | Ollama not running or model not pulled (step 5); the template explainer still works |
 | Port 8000/5173 busy | close old dev windows, or `Get-NetTCPConnection -LocalPort 8000` to find the process |
 
-More: `README.md` (overview). Design docs, demo script and the data-source register are kept locally by the team (not in the repo).
+More: `README.md` (overview), `docs/ARCHITECTURE.md` (system design, API), `docs/DATA.md` (data layout, provenance, sources).

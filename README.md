@@ -1,94 +1,122 @@
-# Hyperborea — urban infrastructure intelligence (Salt Lake Sector V pilot)
+# Hyperborea — urban infrastructure digital twin
 
-**FIRE 2026 SustAI prototype.** Cities manage drainage, power, roads and critical services in separate tools, so nobody sees
-how a heavy downpour in one place becomes a blocked ambulance route somewhere else. Hyperborea puts a bounded pilot —
-**Salt Lake Sector V, Kolkata (2.83 km²)** — into one 3D digital twin where every asset shares a typed dependency graph, and
-runs transparent "what-if" scenarios on it: an extreme-rainfall cascade and a proposed-development assessment, each with
-a hop-by-hop **Why?** explanation.
+**FIRE 2026 · SustAI.** Cities run drainage, power, roads and emergency services in separate systems, so nobody sees how
+a downpour in one street becomes a dark hospital or a blocked ambulance route two blocks away. Hyperborea puts five
+~3 km² urban pilots into one 3D twin where every asset is linked in a typed dependency graph, and runs transparent
+"what-if" scenarios on it — each result explained hop by hop.
 
-> **Honesty first.** Every feature carries `data_status` (observed · curated · modelled · simulated) and `source_id`.
-> The drainage and electrical networks are **simulated** (no public records exist) and labelled so in data and UI.
-> Scenario results are *estimates, not predictions*; risk scores are *indices, not probabilities*.
+![Flood cascade in Salt Lake Sector V, Kolkata](docs/screenshots/02_flood_cascade.png)
+
+> **Honest by design.** Every feature carries `data_status` (observed · curated · modelled · simulated) and a `source_id`.
+> Drainage and electrical networks are **simulated** because no city publishes them — and the UI says so. Results are
+> scenario estimates, not predictions; risk scores are indices, not probabilities. We validated the engine against a real
+> flood and publish the (unflattering) result.
 
 ## What it does
-| Module | Highlights |
+| Module | What you get |
 |---|---|
-| 3D command centre | CesiumJS (no ion), extruded buildings, layer manager with provenance chips, inspector, floating info tag, 2D/3D, render-quality toggle |
-| Weather & climate | Open-Meteo live + 72 h rain; ERA5 1981–2025 rainfall record with IMD thresholds |
-| Drainage (simulated) | 542 drains sized by design storm, DEM flow directions, 7 outfalls, 540 catchments, Manning capacity |
-| Relationship graph | 9.6k assets, 7k typed edges (DRAINS_TO, ADJACENT_TO, ACCESSIBLE_VIA, LOCATED_WITHIN, DEPENDS_ON, SUPPLIES), each with its rule; Cytoscape explorer |
-| Disaster lab | Rain → drain overload → ponding → impassable roads → exposed buildings → transformer shutdown → facility power/access loss, with Why? chains |
-| Development assessment | Draw or pick a site → 7 checks (drainage, flood, road, facilities, electrical, water, land use) → verdict + A/B/C comparison — never "approved" |
-| Electrical (simulated) | 194 transformers, schematic 11 kV feeders, OSM substations; cascade + development headroom |
-| Environment | CAMS air quality → India NAQI; demo water points (labelled); ESA WorldCover + Sentinel-2 NDVI overlays |
-| Accessibility | Free-flow drive times to hospitals / fire / metro; flood Δ and isolated pockets |
-| AI | ML flood surrogate (scikit-learn, held-out F1 0.85 vs 0.32 baseline) for instant sliders; NDWI water layer (index, *not* ML); optional local LLM explainer (Qwen3-4B-Instruct, Apache-2.0) with a grounding check |
-| Reports & health | Infrastructure condition index (partly simulated inputs), printable scenario report (PDF / JSON / CSV) |
-| Live early warning | 72 h Open-Meteo forecast → hourly ML quick-scan → worst burst through the full engine → watch / warning banner (not an official warning; labelled demo burst when dry) |
-| Validation | Chennai Dec 2015 flood vs Sentinel-1 radar (urban double-bounce indicator + control pass); hit rate / false alarms / AUC vs a lowest-ground baseline — reported honestly (engine AUC 0.50 vs 0.60) |
-| Upgrade optimiser | Best drain upsizes, plinth raises and detention tanks per budget (assumed unit costs in INR / GBP / AUD), lazy-greedy on the full engine; before/after + risk-vs-cost curve |
-| Ask the twin | Plain-language questions → scenario → answer from engine facts only (rule parser or local LLM with numeric grounding check) |
-| Access & resilience | Open access by default (no login); optional admin JWT login via `AUTH_REQUIRED=true`; offline snapshot fallback when the API is unreachable |
+| **3D command centre** | CesiumJS map, extruded buildings, layer manager with provenance badges, inspector, floating info tags, 2D/3D |
+| **Five pilots** | Kolkata (Salt Lake Sector V), Chennai (Velachery), Pune (Kharadi), London (Hackney Wick & Stratford), Sydney (Green Square) — one switch in the header |
+| **Flood cascade** | rain → drain overload → ponding → impassable roads → buildings above plinth → transformer shutdown → facilities without power or access, with a **Why?** chain per asset |
+| **Live early warning** | 72 h forecast → hourly ML quick-scan → worst burst run through the full engine → watch / warning banner |
+| **Validation** | Chennai Dec 2015 flood seen by Sentinel-1 radar vs our engine: hit rate, false alarms, AUC vs a "lowest ground floods first" baseline |
+| **Upgrade optimiser** | best drain upsizes, plinth raises and detention tanks for a budget (assumed unit costs in ₹ / £ / A$) |
+| **Development screening** | pick or draw a site → drainage, flood, road, facilities, electrical, water, land-use checks → A/B/C comparison (never an "approval") |
+| **Accessibility** | drive times to hospitals, fire stations and metro; flood-induced delays and isolated buildings |
+| **Environment** | Open-Meteo weather, ERA5 rainfall record, CAMS air quality in the local index (India NAQI, UK DAQI, NSW categories), WorldCover land cover, NDVI, NDWI surface water |
+| **Ask the twin** | plain-language questions answered only from engine results (rule parser, or a local LLM with a numeric grounding check) |
+| **Reports & health** | infrastructure condition index, printable scenario report (PDF / JSON / CSV) |
+| **Works offline** | if the API is unreachable the app serves frozen snapshots for every pilot |
+
+## Screenshots
+| | |
+|---|---|
+| ![Command centre](docs/screenshots/01_command_centre.png) **Command centre** — Kolkata, provenance-labelled layers and the infrastructure health list | ![Flood cascade](docs/screenshots/02_flood_cascade.png) **Flood cascade** — extreme storm, 90 of 542 drains overloaded, live 72 h outlook on top |
+| ![Validation](docs/screenshots/03_validation_chennai.png) **Validation** — Chennai Dec 2015 radar flood map (violet) and the scorecard | ![London air](docs/screenshots/04_london_air_quality.png) **London** — UK DAQI from CAMS, LiDAR terrain |
+| ![Sydney](docs/screenshots/05_sydney_extreme.png) **Sydney** — extreme storm cascade in Green Square | ![Pune access](docs/screenshots/06_pune_access.png) **Pune** — drive time to the nearest hospital per building |
+| ![Ask](docs/screenshots/07_ask_the_twin.png) **Ask the twin** — grounded question answering | |
+
+## The pilots
+| Pilot | Area | Buildings | Terrain | Air index | Extreme storm (80 mm/h × 2 h) |
+|---|---|---|---|---|---|
+| Kolkata · Salt Lake Sector V | 2.83 km² | 1,510 | Copernicus DEM 30 m | India NAQI | 90 / 542 drains overloaded · 6.6 km roads impassable |
+| Chennai · Velachery | 3.07 km² | 4,748 | Copernicus DEM 30 m | India NAQI | 220 / 1,055 · 10.1 km |
+| Pune · Kharadi | 3.18 km² | 1,883 | Copernicus DEM 30 m | India NAQI | 111 / 608 · 4.7 km |
+| London · Hackney Wick & Stratford | 2.90 km² | 1,348 | EA LiDAR DTM 5 m | UK DAQI | 97 / 332 · 4.4 km |
+| Sydney · Green Square & Alexandria | 3.12 km² | 1,318 | Copernicus DEM 30 m | NSW AQC | 83 / 405 · 6.1 km |
+
+Buildings, roads and facilities are OpenStreetMap (observed); drains and transformers are simulated in every pilot.
+Full breakdown: [docs/DATA.md](docs/DATA.md).
+
+## Validation — what we learned
+Chennai, 1–2 December 2015 (286 mm station average in 24 h). Sentinel-1 radar on 6 Dec shows flooding in 532 of 1,044
+catchments: 38 % of pixels next to buildings brightened (water between walls), against 4 % on a control pass after the
+water receded. With the reported rain, the engine flags 62 catchments — hit rate 6 %, false alarms 48 % — and ranks
+catchments no better than chance (AUC 0.50), while simply ranking by low ground scores AUC 0.60. Cause: a regional flood
+(lake releases, river overflow, marsh backwater) that a local-runoff screening engine does not model. Next step: route
+overflow downhill and add lake/river inflows.
+
+## Quick start (Windows / PowerShell)
+```powershell
+git lfs install
+git clone https://github.com/soham-newjourney2/1.hyperborea.git hyperborea; cd hyperborea
+.\scripts\setup.ps1            # .venv + Python packages, npm packages, LFS data, .env from the template
+. .\scripts\env.ps1            # every new shell: caches inside the project, activates .venv
+.\scripts\dev.ps1              # API :8000 + web :5173 (+ local LLM if installed)
+```
+Open <http://localhost:5173> — no login by default. Step-by-step guide, optional local LLM and data rebuilds:
+[SETUP.md](SETUP.md).
 
 ## Architecture
-React + TypeScript + CesiumJS frontend (Vercel) ↔ FastAPI modular monolith (Hugging Face Space, CPU) — layer store,
-relationship graph, flood / power / access / development / health engines, explainer. Offline pipelines (laptop) build all
-data into small GeoPackages and JSON per region (`data/regions/<id>/`).
+React 19 + TypeScript + CesiumJS frontend ↔ FastAPI modular monolith (layer store, relationship graph, flood / power /
+access / development engines, ML surrogate, warning, optimiser, validation, explainer) ↔ per-region GeoPackages built by
+offline Python pipelines. Regions are pure configuration (`config/regions.yaml`). Details, diagram and API list:
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Run locally (Windows / PowerShell)
-**Teammates: follow [SETUP.md](SETUP.md)** — every command, the optional local LLM, data rebuilds and troubleshooting.
-
-```powershell
-py -3.12 -m venv .venv
-. .\scripts\env.ps1                         # env vars + caches inside the project, activates .venv
-pip install -r requirements-pipelines.txt   # API + offline pipelines
-cd frontend; npm install; cd ..
-copy .env.example .env                      # defaults work (open access); see the table below
-.\scripts\dev.ps1                           # backend :8000 + frontend :5173 (+ Ollama if installed)
-```
-Open http://localhost:5173 — no login needed (open access by default). Processed data is committed; to rebuild it:
-```powershell
-python -m pipelines.fetch_osm; python -m pipelines.normalize_osm        # OSM (Geofabrik extract)
-python -m pipelines.fetch_dem; python -m pipelines.build_drainage       # Copernicus DEM → simulated drainage
-python -m pipelines.climate; python -m pipelines.landcover              # ERA5, WorldCover, NDVI
-python -m pipelines.make_sites; python -m pipelines.build_power         # candidate sites, simulated power
-python -m pipelines.make_water_demo; python -m pipelines.build_access   # demo water points, drive graph
-python -m pipelines.train_surrogate; python -m pipelines.cv_water       # ML surrogate, NDWI layer
-python scripts/make_snapshots.py; python scripts/audit_data.py          # offline snapshots, data audit (API running)
-```
-Optional local LLM: `python scripts/install_ollama.py`, then `ollama pull qwen3:4b-instruct-2507-q4_K_M` (≈ 2.5 GB, stays in `local/`).
-
-### Environment variables (`.env`)
-| Name | Purpose |
+| Layer | Stack |
 |---|---|
-| `AUTH_REQUIRED` | `false` (default) = open access; `true` = admin login required |
-| `ADMIN_PASSWORD` | admin login password (only used when `AUTH_REQUIRED=true`) |
-| `JWT_SECRET` | token signing secret (≥ 32 characters) |
-| `CORS_ORIGINS` | allowed browser origins (comma-separated) |
-| `EXPLAINER` | `template` (default) — the local LLM is chosen per request in the UI |
-| `OLLAMA_URL`, `OLLAMA_MODEL` | local LLM endpoint / model (optional) |
+| Frontend | React 19, TypeScript, Vite, CesiumJS (no ion), Tailwind 4, Zustand, Recharts, Cytoscape |
+| Backend | Python 3.12, FastAPI, GeoPandas, Shapely, NetworkX, scikit-learn, PyJWT (optional login) |
+| Pipelines | osmnx + pyosmium, rasterio / rioxarray, pystac-client + Planetary Computer, scipy |
+| AI | scikit-learn flood surrogate (per region); optional local LLM Qwen3-4B-Instruct-2507 via Ollama (Apache-2.0 / MIT) |
+
+## Configuration
+| `.env` variable | Purpose |
+|---|---|
+| `AUTH_REQUIRED` | `false` (default): open access · `true`: admin login with `ADMIN_PASSWORD` + `JWT_SECRET` (≥ 32 chars) |
+| `CORS_ORIGINS` | allowed browser origins |
+| `EXPLAINER` | `template` (default) or `ollama` |
+| `OLLAMA_URL`, `OLLAMA_MODEL` | local LLM endpoint and model |
 | `VITE_API_URL` | frontend → API base URL |
 
-## Tests
-`pytest -q` — 86 tests (data integrity, engines, endpoints, auth, grounding) · `cd frontend; npm test; npm run build` ·
-`python scripts/audit_data.py` (provenance audit of every region; must say PASS).
+Engine thresholds and assumptions are plain YAML in `config/` (flood, risk, scenarios, norms, warning, costs, air-quality
+bands, regions).
 
-## Data, licences and attribution
-Every feature carries `data_status` + `source_id`; AI components and licences are in `models/model_cards/` and `models/regions/<id>/model_cards/`. The full data-source register and design docs are kept by the team outside the repo.
-© OpenStreetMap contributors (ODbL) · Copernicus DEM GLO-30 © DLR/Airbus, ESA · ERA5 (Copernicus/ECMWF), weather and CAMS
-air quality via Open-Meteo.com (CC BY 4.0) · © ESA WorldCover 2021 (CC BY 4.0) · Contains modified Copernicus Sentinel data
-2025–2026 · Sentinel-2 cloudless by EOX.
+## Tests and checks
+```powershell
+pytest backend/tests -q                                   # 138 tests: engines, endpoints, regions, add-ons
+cd frontend; npm run lint; npm test; npm run build; cd ..  # oxlint, vitest, type-check + production build
+python scripts/audit_data.py                              # provenance audit of all five pilots (must say PASS)
+```
 
 ## Limitations
-- Drainage and electrical networks are simulated; flood depths come from a rational-method rule engine without calibration.
-- Uniform design storms; ponding capped at 1 m; travel times are free-flow, not live traffic.
-- Air quality is one modelled value for the pilot; water-quality points are demo data.
-- The ML surrogate mirrors our own engine (not real floods); the LLM explainer can still make meaning-level slips
-  (numbers are checked, meaning is not) — the deterministic template is the default.
+- Drainage and electrical networks are simulated; the flood engine is a rule-based screening model (rational method,
+  Manning, local ponding capped at 1 m) without rivers, lakes, tides, pumps or calibration.
+- Uniform design storms; travel times are free-flow; air quality is one modelled value per pilot; water-quality points
+  are demo data; development norms are Indian defaults in every pilot.
+- ERA5 (~25 km) smooths local cloudbursts; the ML surrogate imitates our engine, not real floods; the LLM can still slip
+  in meaning (numbers are checked, meaning is not) — template answers are the default.
 
-## Roadmap (post-qualification)
-Municipal drain survey + pumping stations, LiDAR terrain, calibrated hydraulics (SWMM), utility feeder data, real
-water-quality and waterlogging observations, wider city coverage, and validation against recorded events.
+## Roadmap
+Downhill overflow routing and lake/river inflows · real drain surveys and pumping stations for one city · utility
+transformer data (UK Power Networks open data needs only an account) · rain-gauge feeds · live traffic · more validation
+events (Sentinel-1 for Kolkata and Sydney floods) · city-specific planning norms.
 
-## Team
-Built for FIRE 2026 SustAI. Licence: MIT.
+## Data and attribution
+© OpenStreetMap contributors (ODbL) · Copernicus DEM GLO-30 © DLR/Airbus, ESA · © Environment Agency 2022 (OGL v3) ·
+ERA5 (Copernicus/ECMWF), weather and CAMS air quality via Open-Meteo.com (CC BY 4.0) · © ESA WorldCover 2021 (CC BY 4.0) ·
+Contains modified Copernicus Sentinel data 2015–2026 · Sentinel-2 cloudless by EOX. Sources, licences and processing:
+[docs/DATA.md](docs/DATA.md).
+
+## Licence
+Code: MIT (see [LICENSE](LICENSE)). Data keeps the licence of its source.
