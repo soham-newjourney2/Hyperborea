@@ -1,10 +1,8 @@
-# ---- local-only (2026-11-11, user decision): Claude Code files, phase plans, docs ----
+# ---- local-only: Claude Code files ----
 CLAUDE.md
 .claude/
 .mcp.json
 planning.md
-phases/
-docs/
 
 # Private repo: track code + all data (large files via Git LFS, see .gitattributes).
 # Still ignored: secrets, machine-specific environments, rebuildable caches and build output.

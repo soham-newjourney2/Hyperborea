@@ -35,13 +35,13 @@ def test_each_gpkg_under_5mb():  # planning §5 commit rule
 
 
 def test_required_props_present(layers):
-    sources = set(re.findall(r"^### (\S+)", (ROOT / "docs" / "DATA_SOURCES.md").read_text(encoding="utf-8"), re.M))
+    sources = set(re.findall(r"^### (\S+)", (ROOT / "docs" / "DATA.md").read_text(encoding="utf-8"), re.M))
     for name, gdf in layers.items():
         assert len(gdf), name
         for col in REQUIRED:
             assert gdf[col].notna().all(), f"{name}.{col} has nulls"
         assert set(gdf["data_status"]) <= {s.value for s in DataStatus}, name
-        assert set(gdf["source_id"]) <= sources, f"{name}: source_id not registered in DATA_SOURCES"
+        assert set(gdf["source_id"]) <= sources, f"{name}: source_id not registered in docs/DATA.md"
 
 
 def test_props_match_shared_schema(layers):

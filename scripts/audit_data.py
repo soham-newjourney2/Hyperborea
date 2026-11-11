@@ -1,7 +1,7 @@
-"""P15 data audit → docs/DATA_AUDIT.md (exit 1 on any failure).
+"""Data audit → local/cache/DATA_AUDIT.md (exit 1 on any failure).
 
 Checks every served layer (GPKGs + curated/synthetic GeoJSON, exactly what the API loads):
-asset_id present + unique · data_status valid · source_id registered in docs/DATA_SOURCES.md · simulated layers are
+asset_id present + unique · data_status valid · source_id registered in docs/DATA.md · simulated layers are
 labelled simulated/curated · simulated/modelled features state assumptions. Repo: .env + local-only files untracked,
 no obvious secrets tracked, committed data/model files < 5 MB.
 Run:  python scripts/audit_data.py
@@ -19,17 +19,17 @@ from backend.app.core import regions as R  # noqa: E402
 from backend.app.core.provenance import DataStatus  # noqa: E402
 from backend.app.services.layer_store import LayerStore  # noqa: E402
 
-OUT = ROOT / "docs" / "DATA_AUDIT.md"  # written locally (docs/ is git-ignored)
+OUT = ROOT / "local" / "cache" / "DATA_AUDIT.md"  # report stays local (git-ignored)
 MUST_BE_SIMULATED = {"drains", "drain_nodes", "catchments", "transformers", "feeders", "water_quality"}
 SECRET = re.compile(r"(hf_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|"
                     r"-----BEGIN (?:RSA |EC )?PRIVATE KEY-----)")
 
 
 def main() -> int:
-    reg = ROOT / "docs" / "DATA_SOURCES.md"  # docs/ is local-only (not in the repo): skip that check if absent
+    reg = ROOT / "docs" / "DATA.md"  # source register: one "### <source_id> — …" heading per source
     sources = set(re.findall(r"^### (\S+)", reg.read_text(encoding="utf-8"), re.M)) if reg.exists() else None
     if sources is None:
-        print("note: docs/DATA_SOURCES.md not found — source_id registration not checked")
+        print("note: docs/DATA.md not found — source_id registration not checked")
     valid = {s.value for s in DataStatus}
     rows, fails = [], []
     ready = [rid for rid in R.registry() if R.is_ready(rid)]
@@ -117,7 +117,7 @@ def _repo_and_report(rows, fails, ready) -> None:
               f"- Possible secrets in tracked text files: {hits or 'none'}", "",
               "## Rules checked",
               "- Every feature has `asset_id` (unique within and across layers), a valid `data_status`, and a `source_id` "
-              "registered in `docs/DATA_SOURCES.md`.",
+              "registered in `docs/DATA.md`.",
               f"- Layers that must be labelled simulated: {', '.join(sorted(MUST_BE_SIMULATED))}.",
               "- Every simulated or modelled feature states its assumptions.", ""]
     if fails:
