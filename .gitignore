@@ -29,8 +29,6 @@ local/*.log
 
 # ---- build output ----
 frontend/dist/
-.vercel/
-deploy/
 *.tsbuildinfo
 
 # ---- python ----
@@ -56,8 +54,10 @@ desktop.ini
 .vscode/*
 !.vscode/settings.json
 
-# portable machine tools (not shared)
+# portable machine tools (not shared): GitHub CLI, Node.js, standalone Python (docs/SETUP.md §1)
 local/tools/gh/
+local/tools/node/
+local/tools/python/
 
 # local LLM (4.7 GB): too large to push — teammates run python scripts/install_ollama.py + ollama pull
 local/ollama/

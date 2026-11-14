@@ -6,7 +6,8 @@ param([switch]$Full)
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 if ($Full) { git lfs pull } else { git lfs pull --include "data/regions/*/processed/**" }
-if (-not (Test-Path .venv)) { py -3.12 -m venv .venv }
+$py = Join-Path $root 'local\tools\python\python.exe'   # portable Python 3.12 (optional; else py launcher)
+if (-not (Test-Path .venv)) { if (Test-Path $py) { & $py -m venv .venv } else { py -3.12 -m venv .venv } }
 . .\scripts\env.ps1
 python -m pip install --upgrade pip
 pip install -r requirements-pipelines.txt
