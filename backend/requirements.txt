@@ -1,4 +1,4 @@
-# API runtime (installed in .venv and in the HF Space image)
+# API runtime (installed in .venv)
 fastapi
 uvicorn[standard]
 pydantic-settings
@@ -13,3 +13,4 @@ joblib
 pyjwt
 pyyaml
 pytest
+httpx2  # starlette TestClient backend (plain httpx is deprecated there)

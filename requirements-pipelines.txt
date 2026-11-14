@@ -7,4 +7,3 @@ pystac-client
 planetary-computer
 matplotlib
 osmium  # P02: Geofabrik .pbf fallback when Overpass is down
-huggingface_hub  # P04: deploy_space.py (Space create/upload)
