@@ -2,39 +2,47 @@
 
 **FIRE 2026 · SustAI.** Cities run drainage, power, roads and emergency services in separate systems, so nobody sees how
 a downpour in one street becomes a dark hospital or a blocked ambulance route two blocks away. Hyperborea puts five
-~3 km² urban pilots into one 3D twin where every asset is linked in a typed dependency graph, and runs transparent
-"what-if" scenarios on it — each result explained hop by hop.
+~3 km² urban pilots into one geospatial twin where every asset is linked in a typed dependency graph, and runs
+transparent "what-if" scenarios on it — each result explained hop by hop.
 
 ![Flood cascade in Salt Lake Sector V, Kolkata](docs/screenshots/02_flood_cascade.png)
 
 > **Honest by design.** Every feature carries `data_status` (observed · curated · modelled · simulated) and a `source_id`.
-> Drainage and electrical networks are **simulated** because no city publishes them — and the UI says so. Results are
-> scenario estimates, not predictions; risk scores are indices, not probabilities. We validated the engine against a real
-> flood and publish the (unflattering) result.
+> Drainage and electrical networks are **simulated** because no city publishes them — and the UI says so on the map.
+> Results are scenario estimates, not predictions; risk scores are indices, not probabilities. We validated the engine
+> against a real flood and publish the (unflattering) result.
 
-## What it does
-| Module | What you get |
-|---|---|
-| **3D command centre** | CesiumJS map, extruded buildings, layer manager with provenance badges, inspector, floating info tags, 2D/3D |
-| **Five pilots** | Kolkata (Salt Lake Sector V), Chennai (Velachery), Pune (Kharadi), London (Hackney Wick & Stratford), Sydney (Green Square) — one switch in the header |
-| **Flood cascade** | rain → drain overload → ponding → impassable roads → buildings above plinth → transformer shutdown → facilities without power or access, with a **Why?** chain per asset |
-| **Live early warning** | 72 h forecast → hourly ML quick-scan → worst burst run through the full engine → watch / warning banner |
-| **Validation** | Chennai Dec 2015 flood seen by Sentinel-1 radar vs our engine: hit rate, false alarms, AUC vs a "lowest ground floods first" baseline |
-| **Upgrade optimiser** | best drain upsizes, plinth raises and detention tanks for a budget (assumed unit costs in ₹ / £ / A$) |
-| **Development screening** | pick or draw a site → drainage, flood, road, facilities, electrical, water, land-use checks → A/B/C comparison (never an "approval") |
-| **Accessibility** | drive times to hospitals, fire stations and metro; flood-induced delays and isolated buildings |
-| **Environment** | Open-Meteo weather, ERA5 rainfall record, CAMS air quality in the local index (India NAQI, UK DAQI, NSW categories), WorldCover land cover, NDVI, NDWI surface water |
-| **Ask the twin** | plain-language questions answered only from engine results (rule parser, or a local LLM with a numeric grounding check) |
-| **Reports & health** | infrastructure condition index, printable scenario report (PDF / JSON / CSV) |
-| **Works offline** | if the API is unreachable the app serves frozen snapshots for every pilot |
+## The workspace
+One screen, three parts: a **module sidebar** (16 modules in six groups), a **geospatial workspace** (CesiumJS map,
+satellite or street basemap, 2D or 3D) and a **module panel** beside it. A KPI strip shows the pilot's area, mapped
+features and layers; the header switches pilot and theme (dark *Noir* or light *Ivory*, remembered per browser).
+
+| Group | Module | What you get |
+|---|---|---|
+| Workspace | **Command Centre** | pilot overview, layer manager with provenance badges, legend, asset inspector, infrastructure health |
+| | **3D Digital Twin** | the same map in 3D with extruded buildings, floating info tags, fly-to-asset |
+| Analysis | **Infrastructure Intelligence** | condition index for drains, transformers and roads (modelled, not field inspections) |
+| | **Dependency Graph** | typed relationships (`DRAINS_TO`, `SUPPLIES`, `DEPENDS_ON`, …) with the rule behind each edge |
+| Risk & resilience | **Flood Simulation** | rain → drain overload → ponding → impassable roads → buildings above plinth → transformer shutdown → facilities without power or access, with a **Why?** chain per asset |
+| | **Early Warning** | live 72 h forecast → hourly ML quick-scan → worst burst through the full engine → watch / warning banner |
+| Data & planning | **Data Validation** | provenance register per layer; Chennai Dec 2015 flood seen by Sentinel-1 radar vs the engine (hit rate, false alarms, AUC) |
+| | **Development Screening** | pick or draw a site → drainage, flood, road, facilities, electrical, water, land-use checks → A/B/C comparison (never an "approval") |
+| | **Upgrade Optimiser** | best drain upsizes, plinth raises and detention tanks for a budget (assumed unit costs in ₹ / £ / A$) |
+| | **Accessibility** | drive times to hospitals, fire stations and metro; flood-induced delays and isolated buildings |
+| Environment | **Weather · Air · Water · Land cover** | Open-Meteo weather and ERA5 rainfall record; CAMS air quality in the local index (India NAQI, UK DAQI, NSW categories); demo water-quality points; WorldCover, NDVI, NDWI surface water |
+| Tools | **Ask Hyperborea** | plain-language questions answered only from engine results (rule parser, or a local LLM with a numeric grounding check) + layer catalogue search |
+| | **Reports** | printable scenario report (PDF / JSON / CSV) with assumptions, provenance and attribution — **Open report** after a flood run |
+
+If the API is unreachable, the app serves **frozen snapshots** for every pilot (amber "Offline snapshot" badge).
 
 ## Screenshots
 | | |
 |---|---|
-| ![Command centre](docs/screenshots/01_command_centre.png) **Command centre** — Kolkata, provenance-labelled layers and the infrastructure health list | ![Flood cascade](docs/screenshots/02_flood_cascade.png) **Flood cascade** — extreme storm, 90 of 542 drains overloaded, live 72 h outlook on top |
-| ![Validation](docs/screenshots/03_validation_chennai.png) **Validation** — Chennai Dec 2015 radar flood map (violet) and the scorecard | ![London air](docs/screenshots/04_london_air_quality.png) **London** — UK DAQI from CAMS, LiDAR terrain |
-| ![Sydney](docs/screenshots/05_sydney_extreme.png) **Sydney** — extreme storm cascade in Green Square | ![Pune access](docs/screenshots/06_pune_access.png) **Pune** — drive time to the nearest hospital per building |
-| ![Ask](docs/screenshots/07_ask_the_twin.png) **Ask the twin** — grounded question answering | |
+| ![Command centre](docs/screenshots/01_command_centre.png) **Command Centre** — Kolkata on Sentinel-2 imagery, KPI strip, infrastructure health ranking | ![Flood cascade](docs/screenshots/02_flood_cascade.png) **Flood Simulation** — extreme storm (80 mm/h × 2 h), simulated networks labelled on the map, live 72 h outlook |
+| ![Validation](docs/screenshots/03_validation_chennai.png) **Data Validation** — Chennai Dec 2015 radar flood map (violet) and the engine scorecard | ![London air](docs/screenshots/04_london_air_quality.png) **Air Quality** — London in the UK DAQI, PM2.5 history + forecast, LiDAR terrain credit |
+| ![Sydney 3D](docs/screenshots/05_sydney_extreme_3d.png) **3D view** — extreme-storm cascade in Green Square, Sydney | ![Pune access](docs/screenshots/06_pune_access.png) **Accessibility** — drive time to the nearest hospital per building, Pune |
+| ![Ask](docs/screenshots/07_ask_the_twin.png) **Ask Hyperborea** — a grounded answer with a link to the scenario on the map | ![Light theme](docs/screenshots/08_light_theme_development.png) **Light theme** — Development Screening on the *Ivory* theme |
+| ![Dependency graph](docs/screenshots/09_dependency_graph.png) **Dependency Graph** — 9,613 assets and 7,042 typed relationships in Sector V | |
 
 ## The pilots
 | Pilot | Area | Buildings | Terrain | Air index | Extreme storm (80 mm/h × 2 h) |
@@ -59,20 +67,22 @@ overflow downhill and add lake/river inflows.
 ## Quick start (Windows / PowerShell)
 ```powershell
 git lfs install
-$env:GIT_LFS_SKIP_SMUDGE = "1"   # skip the 1.7 GB of rebuild-only LFS files; setup fetches the ~12 MB the app needs
+$env:GIT_LFS_SKIP_SMUDGE = "1"   # skip the ~1.7 GB of rebuild-only LFS files; setup fetches the ~12 MB the app needs
 git clone https://github.com/soham-newjourney2/z-Hyperborea.git hyperborea; cd hyperborea
 Remove-Item Env:GIT_LFS_SKIP_SMUDGE
 .\scripts\setup.ps1            # run-only data + .venv + Python and npm packages + .env (add -Full to rebuild data)
 . .\scripts\env.ps1            # every new shell: caches inside the project, activates .venv
 .\scripts\dev.ps1              # API :8000 + web :5173 (+ local LLM if installed)
 ```
-Open <http://localhost:5173> — no login by default. Step-by-step guide, optional local LLM and data rebuilds:
-[docs/SETUP.md](docs/SETUP.md).
+Open <http://localhost:5173> — no login by default. Everything installs **inside the project folder** (`.venv`,
+`frontend/node_modules`, caches and optional portable Python / Node in `local/`). Step-by-step guide, deep links,
+optional local LLM and data rebuilds: [docs/SETUP.md](docs/SETUP.md).
 
 ## Architecture
-React 19 + TypeScript + CesiumJS frontend ↔ FastAPI modular monolith (layer store, relationship graph, flood / power /
-access / development engines, ML surrogate, warning, optimiser, validation, explainer) ↔ per-region GeoPackages built by
-offline Python pipelines. Regions are pure configuration (`config/regions.yaml`). Details, diagram and API list:
+React 19 + TypeScript + CesiumJS frontend (module workspace shell) ↔ FastAPI modular monolith (layer store,
+relationship graph, flood / power / access / development engines, ML surrogate, warning, optimiser, validation,
+explainer) ↔ per-region GeoPackages built by offline Python pipelines. Regions are pure configuration
+(`config/regions.yaml`). Runs locally; no cloud services are required. Details, diagram and API list:
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 | Layer | Stack |
@@ -81,6 +91,19 @@ offline Python pipelines. Regions are pure configuration (`config/regions.yaml`)
 | Backend | Python 3.12, FastAPI, GeoPandas, Shapely, NetworkX, scikit-learn, PyJWT (optional login) |
 | Pipelines | osmnx + pyosmium, rasterio / rioxarray, pystac-client + Planetary Computer, scipy |
 | AI | scikit-learn flood surrogate (per region); optional local LLM Qwen3-4B-Instruct-2507 via Ollama (Apache-2.0 / MIT) |
+
+## Repository layout
+```
+backend/      FastAPI app (app/), engines (engine/), tests (tests/)
+frontend/     React + Cesium web app (src/), offline snapshots and overlays (public/)
+pipelines/    offline data builders, one module per step
+config/       regions and engine thresholds (YAML)
+data/         per-region data: processed/ (served), curated/, synthetic/, snapshots/, raw/ (rebuild only)
+models/       per-region flood surrogate + model cards
+local/        per-region OSM extracts and DEMs (rebuild only); caches and portable tools (git-ignored)
+scripts/      setup, env, dev, region build, snapshots, data audit, Ollama installer
+docs/         setup guide, architecture, data sources, screenshots
+```
 
 ## Configuration
 | `.env` variable | Purpose |
@@ -97,7 +120,7 @@ bands, regions).
 ## Tests and checks
 ```powershell
 pytest backend/tests -q                                   # 138 tests: engines, endpoints, regions, add-ons
-cd frontend; npm run lint; npm test; npm run build; cd ..  # oxlint, vitest, type-check + production build
+cd frontend; npm run lint; npm test; npm run build; cd ..  # oxlint, vitest (9 tests), type-check + production build
 python scripts/audit_data.py                              # provenance audit of all five pilots (must say PASS)
 ```
 
@@ -108,6 +131,8 @@ python scripts/audit_data.py                              # provenance audit of 
   are demo data; development norms are Indian defaults in every pilot.
 - ERA5 (~25 km) smooths local cloudbursts; the ML surrogate imitates our engine, not real floods; the LLM can still slip
   in meaning (numbers are checked, meaning is not) — template answers are the default.
+- The satellite basemap is Sentinel-2 cloudless (EOX, ~10 m), not live or high-resolution imagery; basemaps need
+  internet access.
 
 ## Roadmap
 Downhill overflow routing and lake/river inflows · real drain surveys and pumping stations for one city · utility

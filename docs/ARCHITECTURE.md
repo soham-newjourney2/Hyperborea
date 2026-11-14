@@ -1,14 +1,16 @@
 # Architecture
 
 Hyperborea is a **modular monolith**: one FastAPI backend that holds every pilot region in memory, a React + CesiumJS
-frontend, and offline Python pipelines that build each region's data. No database server, no message broker — data lives
-in small GeoPackages / JSON files per region (`data/regions/<id>/`).
+frontend, and offline Python pipelines that build each region's data. No database server, no message broker, no cloud
+services — everything runs on one machine and data lives in small GeoPackages / JSON files per region
+(`data/regions/<id>/`).
 
 ```mermaid
 flowchart LR
   subgraph Browser["Frontend · React 19 + TypeScript + CesiumJS (Vite)"]
-    MAP[3D map<br/>layers · inspector · info tag]
-    TABS[Inspect · Graph · Disaster · Develop · Access · Env · Ask]
+    SHELL[Module workspace<br/>sidebar · KPI strip · dark / light theme]
+    MAP[Cesium map · 2D / 3D<br/>layers · inspector · info tag]
+    MODS[16 modules<br/>flood · warning · validation · develop · access · env · ask · …]
     SNAP[(Offline snapshots<br/>public/snapshots/regions/&lt;id&gt;)]
   end
 
@@ -106,10 +108,21 @@ detention storage. Thresholds live in `config/flood.yaml`, `config/risk.yaml`.
 | `POST /auth/login` | only used when `AUTH_REQUIRED=true` |
 
 ## Frontend
-`frontend/src/App.tsx` (shell, tabs, deep links `?region=&tab=&scenario=&layers=`), `components/MapView.tsx` (Cesium
-viewer, one styling switch per layer, scenario colouring by asset id), one component per tab/card, `lib/api.ts` (typed
-client; every call carries `?region=`; falls back to `public/snapshots/regions/<id>/*.json` when the API is unreachable),
-`lib/region.ts` (active pilot from the URL; switching reloads the app), `store.ts` (Zustand).
+| File | Responsibility |
+|---|---|
+| `src/App.tsx` | the shell: header (pilot switcher, theme toggle), module sidebar, KPI strip, map panel (Satellite / Street, 2D / 3D), module panel, footer; the module registry (`MODULES`, 16 entries in six groups) and deep links (`?region=`, `?module=`, `?scenario=`, `?env=`, `?tab=`, `?layers=`, `?asset=`) |
+| `src/components/MapView.tsx` | Cesium viewer: one styling switch per layer, scenario colouring by asset id, 2D-aware framing and fly-to, re-homing after 2D ⇄ 3D morphs |
+| `src/components/*` | one component per panel or card — `DisasterLab` (flood), `ForecastOutlook` + `WarningBanner` (early warning), `ValidationCard`, `OptimiserCard`, `DevelopmentPanel`, `AccessPanel`, `EnvironmentPanel` (+ `WeatherPanel`), `RelationshipExplorer`, `InfraHealth`, `AskPanel`, `AssetInspector`, `LayerManager`, `Legend`, `ReportPage` |
+| `src/store.ts` | Zustand store: layers, visibility, selection, imagery (`eox` default) and view (`2d` default), scenario result, `rightTab` |
+| `src/lib/api.ts` | typed client; every call carries `?region=`; falls back to `public/snapshots/regions/<id>/*.json` when the API is unreachable |
+| `src/lib/region.ts` · `auth.ts` · `styles.ts` | active pilot from the URL (switching reloads the app) · optional login token · colour ramps and theme-aware chart colours |
+| `src/index.css` | Tailwind 4 + the shell styles; the two themes (*Noir* dark, *Ivory* light) remap the `--color-slate-*` / `--color-sky-*` variables, so every panel follows the theme without per-component overrides |
+
+**Modules and panels.** Each module renders an existing panel (or a combination) in the module panel. The panels still
+use the store's `rightTab` for deep links and cross-links ("explore relationships", the warning banner, scenario links);
+`App.tsx` keeps module and `rightTab` in sync in both directions (`MODULE_TAB` / `TAB_MODULE`). The theme is stored in
+`localStorage` (`hyperborea.theme`) and applied as `data-theme` on `<html>`. The login screen appears only when the API
+reports `auth_required: true`.
 
 ## Offline pipelines
 `scripts/build_region.ps1 -Region <id>` runs, in order: boundary → `fetch_osm` → `normalize_osm` → `fetch_dem` →
@@ -118,6 +131,6 @@ client; every call carries `?region=`; falls back to `public/snapshots/regions/<
 freezes API responses per region; `scripts/audit_data.py` checks provenance on every layer.
 
 ## Quality gates
-`pytest backend/tests` (engines, endpoints, regions, auth switch, add-ons) · `npm run lint && npm test && npm run build` ·
+`pytest backend/tests` (138 tests: engines, endpoints, regions, auth switch, add-ons) · `npm run lint && npm test && npm run build` ·
 `python scripts/audit_data.py` (every feature has `asset_id`, valid `data_status`, registered `source_id`; simulated layers
 flagged; no non-LFS file > 5 MB; no secrets tracked).

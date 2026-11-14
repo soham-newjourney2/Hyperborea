@@ -132,7 +132,16 @@ Licences were checked on the provider pages on the dates given.
 ### ml_surrogate — Flood surrogate model
 - Ours (`train_surrogate.py`): scikit-learn HistGradientBoosting per region, trained on 2,000 engine runs, tested on held-out spatial blocks (F1 0.86–0.93 vs 0.37–0.58 for a rain-threshold baseline). **modelled** — a copy of our engine, not validated on real floods. Model cards in `models/regions/<id>/model_cards/`.
 
-## Attribution (shown in the app footer and reports)
+### Basemaps (not data layers)
+- **Satellite** (default): Sentinel-2 cloudless mosaic by EOX IT Services (tiles.maps.eox.at) — "Sentinel-2 cloudless by
+  EOX", contains modified Copernicus Sentinel data. ~10 m, a cloud-free composite, not live or high-resolution imagery.
+- **Street**: OpenStreetMap standard tiles (tile.openstreetmap.org) — "© OpenStreetMap contributors", light demo use only.
+- Both are streamed from the internet at view time and never stored in the repo.
+
+## Attribution
+The app footer shows short credits (OpenStreetMap · EOX Sentinel-2 · Open-Meteo · ESA WorldCover, plus the Environment
+Agency terrain credit in London) and the map panel credits the basemap. The full list below is in every scenario report
+and in the README:
 © OpenStreetMap contributors (ODbL) · Copernicus DEM GLO-30 © DLR/Airbus, ESA · © Environment Agency 2022 (OGL v3, London
 terrain) · ERA5 (Copernicus/ECMWF), weather and CAMS air quality via Open-Meteo.com (CC BY 4.0) · © ESA WorldCover 2021
 (CC BY 4.0) · Contains modified Copernicus Sentinel data 2015–2026 · Sentinel-2 cloudless by EOX (base imagery).
