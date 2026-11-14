@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getClimateSummary, getPresets, type ClimateSummary, type Preset, type Trend } from '../lib/api'
+import { CHART_AXIS, CHART_GRID, CHART_MUTED } from '../lib/styles'
 import { useApp } from '../store'
 import ProvenanceBadge from './ProvenanceBadge'
 
 // Single-series charts: one hue (magnitude), recessive grid/axes, labelled reference lines in muted ink.
 const RAIN = '#38bdf8'
-const INK_MUTED = '#64748b'
-const GRID = '#1e293b'
-const AXIS = { fontSize: 10, fill: '#94a3b8' }
+const INK_MUTED = CHART_MUTED
+const GRID = CHART_GRID
+const AXIS = CHART_AXIS
 
 const timeFmt = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })
 const fmtTime = (iso: string) => timeFmt.format(new Date(iso))
@@ -109,7 +110,7 @@ function RainForecast() {
       ) : (
         <div className="h-28" role="img" aria-label={`Hourly precipitation forecast, ${total.toFixed(1)} mm over 72 hours`}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={hourly} margin={{ top: 4, right: 4, bottom: 0, left: -18 }} barCategoryGap={1}>
+            <BarChart data={hourly} margin={{ top: 4, right: 4, bottom: 0, left: -8 }} barCategoryGap={1}>
               <CartesianGrid vertical={false} stroke={GRID} />
               <XAxis dataKey="time" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} interval={23}
                 tickFormatter={(t: string) => t.slice(5, 10)} />
@@ -149,7 +150,7 @@ function ClimateCharts({ c }: { c: ClimateSummary }) {
       <Card title={`Wettest day each year (mm) · ${a}–${b}`} right={<ProvenanceBadge status={c.data_status} small />}>
         <div className="h-36" role="img" aria-label={`Annual maximum one-day rainfall with ${t.label ?? 'IMD thresholds'} (heavy, very heavy)`}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={c.years} margin={{ top: 8, right: 34, bottom: 0, left: -18 }} barCategoryGap={1}>
+            <BarChart data={c.years} margin={{ top: 8, right: 34, bottom: 0, left: -8 }} barCategoryGap={1}>
               <CartesianGrid vertical={false} stroke={GRID} />
               <XAxis dataKey="year" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} interval={9} />
               <YAxis tick={AXIS} tickLine={false} axisLine={false} width={40} domain={[0, 200]} ticks={[0, 50, 100, 150, 200]} />
@@ -161,9 +162,9 @@ function ClimateCharts({ c }: { c: ClimateSummary }) {
                 }}
               />
               <ReferenceLine y={t.heavy} stroke={INK_MUTED} strokeDasharray="4 3"
-                label={{ value: `${t.heavy}`, position: 'right', fontSize: 9, fill: '#94a3b8' }} />
+                label={{ value: `${t.heavy}`, position: 'right', fontSize: 9, fill: CHART_AXIS.fill }} />
               <ReferenceLine y={t.very_heavy} stroke={INK_MUTED} strokeDasharray="4 3"
-                label={{ value: `${t.very_heavy}`, position: 'right', fontSize: 9, fill: '#94a3b8' }} />
+                label={{ value: `${t.very_heavy}`, position: 'right', fontSize: 9, fill: CHART_AXIS.fill }} />
               <Bar dataKey="max_1day_mm" fill={RAIN} radius={[2, 2, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
@@ -177,7 +178,7 @@ function ClimateCharts({ c }: { c: ClimateSummary }) {
       <Card title={`Heavy-rain days (≥ ${t.heavy} mm) per year`}>
         <div className="h-24" role="img" aria-label={`Heavy rain days per year (${t.label ?? 'IMD thresholds'})`}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={c.years} margin={{ top: 4, right: 4, bottom: 0, left: -18 }} barCategoryGap={1}>
+            <BarChart data={c.years} margin={{ top: 4, right: 4, bottom: 0, left: -8 }} barCategoryGap={1}>
               <CartesianGrid vertical={false} stroke={GRID} />
               <XAxis dataKey="year" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} interval={9} />
               <YAxis tick={AXIS} tickLine={false} axisLine={false} width={40} allowDecimals={false} />

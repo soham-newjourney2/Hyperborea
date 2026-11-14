@@ -132,3 +132,9 @@ export const LEVEL_STYLE: Record<string, { text: string; box: string; label: str
   watch: { text: 'text-amber-200', box: 'border-amber-500/60 bg-amber-500/10', label: 'Flood watch' },
   warning: { text: 'text-red-200', box: 'border-red-500/70 bg-red-500/15', label: 'Flood warning' },
 }
+
+// Chart chrome follows the active theme: SVG presentation attributes and inline styles accept var().
+export const CHART_GRID = 'var(--chart-grid)'
+export const CHART_MUTED = 'var(--chart-muted)'
+export const CHART_INK = 'var(--chart-ink)'
+export const CHART_AXIS = { fontSize: 10, fill: 'var(--chart-axis)' }

@@ -63,9 +63,9 @@ function fmt(v: unknown): string {
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[7.5rem_1fr] gap-2 py-0.5 text-xs">
-      <dt className="truncate text-slate-500">{k}</dt>
-      <dd className="break-words text-slate-200">{v}</dd>
+    <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-2 py-0.5 text-xs">
+      <dt className="truncate text-slate-500" title={k}>{k}</dt>
+      <dd className="text-slate-200 [overflow-wrap:anywhere]">{v}</dd>
     </div>
   )
 }

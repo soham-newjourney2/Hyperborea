@@ -21,11 +21,14 @@ export default function Login({ onDone }: { onDone: (role: string) => void }) {
     }
   }
   return (
-    <div className="flex h-full items-center justify-center bg-[radial-gradient(ellipse_at_center,#0f1a26_0%,#0b0f14_70%)]">
+    <div className="login-screen flex h-full items-center justify-center bg-[radial-gradient(ellipse_at_center,var(--panel-2)_0%,var(--bg)_70%)]">
       <form onSubmit={submit} className="w-80 space-y-3 rounded-lg border border-slate-800 bg-slate-950/90 p-5 shadow-2xl">
-        <div>
-          <h1 className="text-lg font-semibold tracking-[0.3em] text-sky-300">HYPERBOREA</h1>
-          <p className="text-xs text-slate-500">Urban intelligence · multi-city pilots · admin access</p>
+        <div className="flex items-center gap-3">
+          <img src="/hyperborea-mark.png" alt="" className="h-11 w-11 rounded-xl border border-pink-500/50 bg-[#0d0a11] object-cover shadow-[0_0_20px_rgba(255,61,154,0.16)]" />
+          <div>
+            <h1 className="text-lg font-semibold tracking-[0.3em] text-pink-200">HYPERBOREA</h1>
+            <p className="text-xs text-slate-500">URBAN INTELLIGENCE PLATFORM</p>
+          </div>
         </div>
         <label className="block text-xs text-slate-400">
           Password

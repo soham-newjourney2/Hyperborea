@@ -12,10 +12,10 @@ export default function RegionSwitcher() {
   }, [])
   if (!regions || regions.length < 2) return null
   return (
-    <label className="flex items-center gap-1 text-[11px] text-slate-500">
+    <label className="region-switcher flex min-w-0 items-center gap-1 text-[11px] text-slate-500">
       Pilot
       <select value={REGION} onChange={(e) => switchRegion(e.target.value)} aria-label="Pilot region"
-        className="w-56 rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-xs text-slate-200 outline-none focus:border-sky-500">
+        className="w-56 min-w-0 max-w-full rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 text-xs text-slate-200 outline-none focus:border-sky-500">
         {regions.map((r) => (
           <option key={r.id} value={r.id} disabled={r.status !== 'ready' && r.id !== REGION}>
             {r.city} · {r.name}{r.status === 'ready' ? '' : ' (data pending)'}

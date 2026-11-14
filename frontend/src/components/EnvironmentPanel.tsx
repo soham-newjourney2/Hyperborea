@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
+import { CHART_AXIS as AXIS, CHART_GRID as GRID, CHART_INK, CHART_MUTED } from '../lib/styles'
 import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getAir, getAsset, getLandcover, getWater, type AirQuality, type Landcover, type WaterResponse } from '../lib/api'
 import { useApp } from '../store'
@@ -6,7 +7,6 @@ import ProvenanceBadge from './ProvenanceBadge'
 
 const WeatherPanel = lazy(() => import('./WeatherPanel'))
 type Sub = 'weather' | 'air' | 'water' | 'land'
-const LINK_SUB = new URLSearchParams(window.location.search).get('env') as Sub | null // ?env=air|water|land
 
 // NAQI PM2.5 bands (CPCB 2014) — official category colours, used only as faint context bands + labelled.
 const PM25_BANDS: [number, number, string, string][] = [
@@ -14,8 +14,6 @@ const PM25_BANDS: [number, number, string, string][] = [
   [90, 120, '#FF9900', 'Poor'], [120, 250, '#FF0000', 'Very Poor'], [250, 400, '#C00000', 'Severe'],
 ]
 const POL_LABEL: Record<string, string> = { pm2_5: 'PM2.5', pm10: 'PM10', nitrogen_dioxide: 'NO₂', ozone: 'O₃' }
-const AXIS = { fontSize: 10, fill: '#94a3b8' }
-const GRID = '#1e293b'
 
 function Card({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -80,14 +78,14 @@ function Air() {
       <Card title="PM2.5 · hourly, past 24 h + 72 h forecast" right={<span className="text-[10px] text-slate-500">µg/m³</span>}>
         <div className="h-40" role="img" aria-label={`Hourly PM2.5 with ${idx} category bands`}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={series} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
+            <LineChart data={series} margin={{ top: 4, right: 8, bottom: 0, left: -8 }}>
               {bands.map(([lo, hi, col, name]) => (
                 <ReferenceArea key={name} y1={lo} y2={hi} fill={col} fillOpacity={0.07} stroke="none" ifOverflow="hidden" />
               ))}
               <CartesianGrid vertical={false} stroke={GRID} />
               <XAxis dataKey="t" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} interval={23} tickFormatter={(t: string) => t.slice(0, 5)} />
               <YAxis tick={AXIS} tickLine={false} axisLine={false} width={40} domain={[0, (m: number) => Math.max(150, Math.ceil(m / 50) * 50)]} />
-              <ReferenceLine x={nowKey.slice(5, 13).replace('T', ' ')} stroke="#64748b" strokeDasharray="3 3"
+              <ReferenceLine x={nowKey.slice(5, 13).replace('T', ' ')} stroke={CHART_MUTED} strokeDasharray="3 3"
                 label={{ value: 'now', position: 'insideTopRight', fontSize: 9, fill: '#94a3b8' }} />
               <Tooltip
                 content={({ active, payload }) => {
@@ -102,7 +100,7 @@ function Air() {
                   )
                 }}
               />
-              <Line type="monotone" dataKey="pm2_5" stroke="#e2e8f0" strokeWidth={2} dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="pm2_5" stroke={CHART_INK} strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -232,8 +230,10 @@ function Land() {
   )
 }
 
-export default function EnvironmentPanel() {
-  const [sub, setSub] = useState<Sub>(LINK_SUB && ['weather', 'air', 'water', 'land'].includes(LINK_SUB) ? LINK_SUB : 'weather')
+// The active sub-view is owned by the module navigation (App), so the sidebar, the heading and these tabs
+// always agree. (It used to be local state reset by an effect, which also discarded the ?env= deep link.)
+export default function EnvironmentPanel({ sub, onSub }: { sub: Sub; onSub: (s: Sub) => void }) {
+  const setSub = onSub
   const btn = (id: Sub, label: string) => (
     <button key={id} onClick={() => setSub(id)}
       className={`rounded px-2 py-0.5 text-xs ${sub === id ? 'bg-sky-500/20 text-sky-300 ring-1 ring-sky-500/50' : 'text-slate-400 hover:text-slate-200'}`}>

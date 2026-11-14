@@ -76,8 +76,8 @@ export const useApp = create<AppState>((set) => ({
   loading: {},
   selectedId: null,
   selected: null,
-  imagery: 'osm',
-  view: '3d',
+  imagery: 'eox',
+  view: '2d',
   quality: savedQuality(),
   rightTab: 'inspector',
   weather: null,
@@ -106,7 +106,9 @@ export const useApp = create<AppState>((set) => ({
   select: (selectedId) =>
     set((s) => ({
       selectedId,
-      selected: null,
+      // Re-selecting the current asset keeps its loaded detail: the fetch only runs when the id changes, so
+      // clearing it here left the inspector on "Loading…" (and hid the map tag) until another asset was picked.
+      selected: selectedId && selectedId === s.selectedId ? s.selected : null,
       neighbourhood: selectedId ? s.neighbourhood : [],
       rightTab: selectedId && s.rightTab === 'weather' ? 'inspector' : s.rightTab, // keep Relations open while exploring
     })),

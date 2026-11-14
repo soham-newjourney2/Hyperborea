@@ -20,6 +20,7 @@ import {
   PolylineDashMaterialProperty,
   PolylineGraphics,
   Rectangle,
+  SceneMode,
   SceneTransforms,
   SingleTileImageryProvider,
   ScreenSpaceEventHandler,
@@ -413,6 +414,17 @@ function applyQuality(viewer: Viewer, q: Quality) {
 }
 
 function flyHome(viewer: Viewer, region: Region, duration = 2) {
+  const mode = viewer.scene.mode
+  if (mode === SceneMode.MORPHING) return // camera moves are ignored mid-morph; morphComplete re-homes
+  if (mode !== SceneMode.SCENE3D) {
+    // 2D is top-down: the oblique 3D vantage point below sits ~2 km south of the pilot, which left the
+    // map empty. Frame the pilot's bounding box (plus a margin) instead.
+    const [w, s, e, n] = region.bbox
+    const px = (e - w) * 0.12
+    const py = (n - s) * 0.12
+    viewer.camera.flyTo({ destination: Rectangle.fromDegrees(w - px, s - py, e + px, n + py), duration })
+    return
+  }
   const [lon, lat] = region.centroid
   // P18: 11:00 local solar time at the pilot (UTC = 11 h − lon/15) on the data date, any region
   viewer.clock.currentTime = JulianDate.addHours(JulianDate.fromIso8601('2026-11-06T11:00:00Z'), -lon / 15, new JulianDate())
@@ -455,6 +467,8 @@ export default function MapView() {
     base.saturation = 0.15
     const viewer = new Viewer(el.current, {
       baseLayer: base,
+      // Start directly in the stored view: morphing to 2D after start-up swallowed the first fly-to.
+      sceneMode: useApp.getState().view === '2d' ? SceneMode.SCENE2D : SceneMode.SCENE3D,
       terrainProvider: new EllipsoidTerrainProvider(),
       baseLayerPicker: false,
       geocoder: false,
@@ -498,6 +512,12 @@ export default function MapView() {
       tag.style.visibility = 'visible'
       tag.style.transform = `translate(${Math.round(xy.x)}px, ${Math.round(xy.y)}px) translate(-50%, calc(-100% - 14px))`
     })
+    // After a 2D ⇄ 3D morph the previous camera no longer frames the pilot: re-home for the new mode.
+    scene.morphComplete.addEventListener(() => {
+      const r = useApp.getState().region
+      if (r) flyHome(viewer, r, 0)
+      scene.requestRender()
+    })
     viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
     const click = new ScreenSpaceEventHandler(viewer.scene.canvas)
     click.setInputAction((ev: { position: { x: number; y: number } }) => {
@@ -517,6 +537,7 @@ export default function MapView() {
       if (useApp.getState().drawing) useApp.getState().finishDraw()
     }, ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
     viewerRef.current = viewer
+    const overlaysMap = overlayLayers.current
     useApp.getState().setCaptureMap(() => {
       if (viewer.isDestroyed()) return null
       viewer.scene.render()
@@ -530,9 +551,11 @@ export default function MapView() {
     const [idx, lk] = [entityIndex.current, looks.current]
     return () => {
       click.destroy()
+      useApp.getState().setCaptureMap(null) // the closure holds the destroyed viewer
       viewer.destroy()
       viewerRef.current = null
       map.clear()
+      overlaysMap.clear() // imagery layers of the destroyed viewer: a remount must add them again
       eox.current = null
       idx.clear()
       lk.originals.clear()
@@ -623,8 +646,9 @@ export default function MapView() {
   useEffect(() => {
     const scene = viewerRef.current?.scene
     if (!scene) return
-    if (view === '2d') scene.morphTo2D(1.2)
-    else scene.morphTo3D(1.2)
+    if (scene.mode === (view === '2d' ? SceneMode.SCENE2D : SceneMode.SCENE3D)) return // already there (initial mount)
+    if (view === '2d') scene.morphTo2D(0.8)
+    else scene.morphTo3D(0.8)
   }, [view])
 
   // Selection: fetch asset detail. Highlights (selected + neighbourhood) repaint on any change.
@@ -714,6 +738,12 @@ export default function MapView() {
   useEffect(() => {
     const viewer = viewerRef.current
     if (!viewer || !flyTarget) return
+    if (viewer.scene.mode === SceneMode.MORPHING) return
+    if (viewer.scene.mode !== SceneMode.SCENE3D) {
+      // top-down: centre on the asset itself (the southward offset is only right for the tilted 3D camera)
+      viewer.camera.flyTo({ destination: Cartesian3.fromDegrees(flyTarget.lon, flyTarget.lat, 900), duration: 1.2 })
+      return
+    }
     viewer.camera.flyTo({
       destination: Cartesian3.fromDegrees(flyTarget.lon, flyTarget.lat - 0.0045, 650),
       orientation: { heading: 0, pitch: CesiumMath.toRadians(-48), roll: 0 },
@@ -733,13 +763,13 @@ export default function MapView() {
         {selected && selected.asset_id === selectedId && <InfoTag asset={selected} onClose={() => select(null)} />}
       </div>
       {drawing && (
-        <div className="absolute left-1/2 top-14 -translate-x-1/2 rounded border border-purple-400/70 bg-slate-950/90 px-3 py-1.5 text-[11px] text-purple-100 shadow-lg">
+        <div className="absolute left-1/2 top-20 z-[1] w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded border border-purple-400/70 bg-slate-950/90 px-3 py-1.5 text-[11px] text-purple-100 shadow-lg">
           Drawing footprint · click to add corners ({drawPoints.length}) · double-click to finish ·{' '}
           <button className="underline" onClick={() => useApp.getState().cancelDraw()}>cancel</button>
         </div>
       )}
       {flood && (
-        <div className="absolute bottom-10 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded border border-amber-500/60 bg-slate-950/90 px-3 py-1.5 text-[11px] text-amber-200 shadow-lg">
+        <div className="absolute bottom-10 left-1/2 flex w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-x-3 gap-y-0.5 rounded border border-amber-500/60 bg-slate-950/90 px-3 py-1.5 text-[11px] text-amber-200 shadow-lg">
           <span className="font-semibold">
             SCENARIO {flood.params.preset ? flood.params.preset.toUpperCase() : 'CUSTOM'} · {flood.params.rain_mm_h} mm/h × {flood.params.duration_h} h
           </span>
@@ -764,12 +794,6 @@ export default function MapView() {
           Quality: {quality === 'high' ? 'High' : 'Standard'}
         </MapButton>
         <MapButton onClick={() => region && viewerRef.current && flyHome(viewerRef.current, region)}>Home</MapButton>
-        <MapButton onClick={() => useApp.getState().setView(view === '3d' ? '2d' : '3d')}>
-          {view === '3d' ? '2D' : '3D'}
-        </MapButton>
-        <MapButton onClick={() => useApp.getState().setImagery(imagery === 'osm' ? 'eox' : 'osm')}>
-          {imagery === 'osm' ? 'Satellite' : 'Street map'}
-        </MapButton>
         {selectedId && <MapButton onClick={() => select(null)}>Clear selection</MapButton>}
       </div>
     </div>
